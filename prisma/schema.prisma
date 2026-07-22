@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         UserRole @default(CUSTOMER)
+  name         String
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Admin 2FA (TOTP). Admin sessions are only ever issued after a verified
+  // TOTP code; totpEnabled=false forces the setup flow on next login.
+  totpSecret  String?
+  totpEnabled Boolean @default(false)
+
+  // Admin account lockout: counts consecutive failed login/TOTP attempts;
+  // locked accounts auto-unlock when lockedUntil passes.
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+
+  requests      PartRequest[] @relation("CustomerRequests")
+  quotesSent    PartRequest[] @relation("QuotedBy")
+  statusUpdates StatusLog[]
+  notifications Notification[]
+}
+
+// One-time codes for phone login. Codes are 6 digits, short-lived, single-use.
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String
+  code       String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+}
+
+// ─── Vehicle taxonomy ────────────────────────────────────────────────────────
+
+model Brand {
+  id     String     @id @default(cuid())
+  name   String     @unique
+  active Boolean    @default(true)
+  models CarModel[]
+
+  requests PartRequest[]
+}
+
+model CarModel {
+  id      String @id @default(cuid())
+  name    String
+  brandId String
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  yearRanges YearRange[]
+  requests   PartRequest[]
+
+  @@unique([brandId, name])
+}
+
+model YearRange {
+  id         String   @id @default(cuid())
+  startYear  Int
+  endYear    Int
+  carModelId String
+  carModel   CarModel @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+
+  requests PartRequest[]
+
+  @@unique([carModelId, startYear, endYear])
+}
+
+// ─── Part taxonomy ───────────────────────────────────────────────────────────
+
+// Names carry optional Kurdish (Sorani) and Arabic translations for the
+// multilingual UI; `name` is the English fallback.
+
+model Category {
+  id     String @id @default(cuid())
+  name   String @unique
+  nameKu String?
+  nameAr String?
+  sortOrder Int  @default(0)
+
+  subCategories SubCategory[]
+}
+
+model SubCategory {
+  id         String   @id @default(cuid())
+  name       String
+  nameKu     String?
+  nameAr     String?
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  parts Part[]
+
+  @@unique([categoryId, name])
+}
+
+model Part {
+  id                String      @id @default(cuid())
+  name              String
+  nameKu            String?
+  nameAr            String?
+  requiresColorCode Boolean     @default(false)
+  // Optional indicative price range shown to customers before they submit
+  // (rough estimate set by admin — never a firm quote).
+  priceMinUsd       Decimal?    @db.Decimal(10, 2)
+  priceMaxUsd       Decimal?    @db.Decimal(10, 2)
+  subCategoryId     String
+  subCategory       SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  requests PartRequest[]
+
+  @@unique([subCategoryId, name])
+}
+
+// ─── Requests / quotes / orders ──────────────────────────────────────────────
+
+enum RequestStatus {
+  PENDING // submitted, waiting for admin quote
+  QUOTED // admin sent a price
+  APPROVED // customer accepted the quote
+  REJECTED // customer declined the quote
+  PAID // payment received/confirmed
+  SOURCING // admin ordered from supplier
+  SHIPPED // on its way to Kurdistan
+  ARRIVED // in country
+  READY // ready for pickup/delivery
+  COMPLETED
+  CANCELLED
+}
+
+enum SourceCountry {
+  CHINA
+  DUBAI
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  ONLINE_GATEWAY
+  BANK_TRANSFER
+}
+
+model PartRequest {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   User     @relation("CustomerRequests", fields: [customerId], references: [id])
+
+  brandId     String
+  brand       Brand     @relation(fields: [brandId], references: [id])
+  carModelId  String
+  carModel    CarModel  @relation(fields: [carModelId], references: [id])
+  yearRangeId String
+  yearRange   YearRange @relation(fields: [yearRangeId], references: [id])
+  partId      String
+  part        Part      @relation(fields: [partId], references: [id])
+
+  colorCode String?
+  notes     String?
+  photoUrl  String?
+
+  // Customer's requested sourcing route (China ≈ 2 months, Dubai ≈ 20 days).
+  // Advisory: admin sees it and may source differently; `source` below is
+  // what was actually quoted.
+  preferredSource SourceCountry?
+
+  status RequestStatus @default(PENDING)
+
+  // Quote (filled by admin). priceUsd is the TOTAL the customer pays and is
+  // what the payment/notification flows read; the four components below
+  // itemize it. Historical quotes (pre-itemization) were backfilled with
+  // pricePartUsd = priceUsd and the other components left null.
+  source           SourceCountry?
+  priceUsd         Decimal?       @db.Decimal(10, 2)
+  pricePartUsd     Decimal?       @db.Decimal(10, 2)
+  priceShippingUsd Decimal?       @db.Decimal(10, 2)
+  priceTaxUsd      Decimal?       @db.Decimal(10, 2)
+  priceDeliveryUsd Decimal?       @db.Decimal(10, 2)
+  quoteNotes       String?
+  quotedById String?
+  quotedBy   User?          @relation("QuotedBy", fields: [quotedById], references: [id])
+  quotedAt   DateTime?
+
+  // Customer decision + payment
+  approvedAt      DateTime?
+  paymentMethod   PaymentMethod?
+  paymentProofUrl String? // bank-transfer receipt uploaded by the customer
+  paidAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusLogs    StatusLog[]
+  notifications Notification[]
+
+  @@index([status])
+  @@index([customerId])
+}
+
+model StatusLog {
+  id        String        @id @default(cuid())
+  requestId String
+  request   PartRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  status    RequestStatus
+  note      String?
+  createdById String?
+  createdBy   User?       @relation(fields: [createdById], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@index([requestId])
+}
+
+// ─── Admin audit ─────────────────────────────────────────────────────────────
+
+// Every admin login attempt (password fail, lockout hit, TOTP fail/success)
+// is recorded here for basic audit visibility on the dashboard.
+model AdminLoginLog {
+  id        String   @id @default(cuid())
+  email     String
+  userId    String?
+  ip        String
+  success   Boolean
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─── Notifications (in-app; WhatsApp delivery hooks onto the same rows) ──────
+
+model Notification {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId String?
+  request   PartRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  type      String // e.g. QUOTE_SENT, PAYMENT_CONFIRMED, STATUS_UPDATE
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  @@index([userId, readAt])
+}

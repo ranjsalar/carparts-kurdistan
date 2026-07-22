@@ -1,0 +1,516 @@
+{
+  "common": {
+    "brand": "CarParts",
+    "brandSuffix": "Kurdistan",
+    "back": "Back",
+    "continue": "Continue",
+    "logout": "Log out",
+    "login": "Log in",
+    "signup": "Sign up",
+    "optional": "optional"
+  },
+  "home": {
+    "heroTitle": "Any part. Any car. Delivered.",
+    "howTitle": "How it works",
+    "how1Title": "Request",
+    "how1Body": "Pick your car and the exact part — dropdowns, no guesswork.",
+    "how2Title": "Get a quote",
+    "how2Body": "We source it and send you the price.",
+    "how3Title": "Approve & pay",
+    "how3Body": "Nothing is charged until you say yes.",
+    "how4Title": "Track to your door",
+    "how4Body": "Follow every step until it arrives.",
+    "selectorTitle": "Find parts for your car",
+    "selectorHint": "Pick your vehicle — we'll take it from there.",
+    "selectorButton": "Find my part",
+    "trust1": "Any brand, any model",
+    "trust1Sub": "If it exists, we can source it.",
+    "trust2": "Sourced from China & Dubai",
+    "trust2Sub": "Original and aftermarket options.",
+    "trust3": "Approve before you pay",
+    "trust3Sub": "No charges until you accept the quote.",
+    "trust4": "Track every step",
+    "trust4Sub": "From order to your door.",
+    "categoriesTitle": "Browse by category",
+    "brandsTitle": "Browse by brand",
+    "brandsHint": "Tap a brand to see its models.",
+    "modelsCount": "{count} models",
+    "routeTitle": "From the source to your door",
+    "routeOrigin": "China & Dubai",
+    "routeCustoms": "Border & customs",
+    "routeDest": "Kurdistan",
+    "tagline": "Any part, any brand, any model, any year. Tell us what you need and we'll source it for you — you approve the price before paying.",
+    "requestPart": "Request a part",
+    "myRequests": "My requests",
+    "getStarted": "Get started",
+    "adminPanel": "Admin panel",
+    "footer": "Request → quote → approve → pay → track."
+  },
+  "nav": {
+    "newRequest": "New request",
+    "myRequests": "My requests",
+    "notifications": "Notifications"
+  },
+  "footer": {
+    "company": "Company",
+    "about": "About us",
+    "contact": "Contact",
+    "support": "Support",
+    "howItWorks": "How it works",
+    "faq": "FAQ",
+    "track": "Track an order",
+    "legal": "Legal",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "connect": "Connect",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "rights": "© {year} CarParts Kurdistan. All rights reserved."
+  },
+  "meta": {
+    "title": "CarParts Kurdistan — any car part, delivered",
+    "description": "Request any part for any car in Kurdistan. Approve the price before paying and track your order from China or Dubai to your door."
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again.",
+    "phoneInvalid": "Enter a valid phone number, e.g. +9647501234567.",
+    "codeSixDigits": "The code is 6 digits.",
+    "otpCooldown": "Please wait a minute before requesting another code.",
+    "otpExpired": "Code expired or not found — request a new one.",
+    "otpTooMany": "Too many wrong attempts — request a new code.",
+    "otpWrong": "Wrong code — check and try again.",
+    "otpRateLimited": "Too many attempts — try again later.",
+    "uploadType": "Only JPG, PNG, WEBP or HEIC images are allowed.",
+    "uploadSize": "Image must be under 5 MB.",
+    "vehicleMismatch": "The selected vehicle details don't match — please re-select your car.",
+    "partNotFound": "Selected part not found.",
+    "colorRequired": "This part is painted — please enter your car's color code.",
+    "submitRateLimited": "Too many requests submitted — please try again in an hour.",
+    "requestNotFound": "Request not found.",
+    "noOpenQuote": "This request has no open quote to decide on.",
+    "methodAfterApproval": "Payment method can only be chosen after approving the quote.",
+    "invalidMethod": "Pick a valid payment method.",
+    "onlyApprovedPaid": "Only approved requests can be marked as paid.",
+    "noMethodYet": "The customer hasn't chosen a payment method yet.",
+    "invalidPrice": "Enter a valid price in USD (e.g. 250 or 249.99).",
+    "invalidSource": "Pick a source: China or Dubai.",
+    "cantQuoteNow": "This request can't be quoted in its current status.",
+    "orderCompleted": "This order is completed — no further status changes.",
+    "shipmentAfterPayment": "Shipment updates start after payment.",
+    "inUse": "Can't delete this item — it's referenced by existing part requests.",
+    "badYears": "Enter a valid year range (start ≤ end).",
+    "badRange": "Enter a valid price range (min ≤ max).",
+    "invalidBreakdown": "Enter valid amounts — part price is required, other lines can be 0.",
+    "totpWrong": "Wrong code — check your authenticator app and try again.",
+    "totpExpiredSession": "This login step expired — please log in again.",
+    "accountLocked": "Too many failed attempts — this account is locked for 15 minutes.",
+    "adminPhoneLogin": "Admin accounts must log in with email and two-factor authentication."
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "phoneAlt": "Log in with phone number instead",
+      "noAccount": "No account?"
+    },
+    "signup": {
+      "title": "Create account",
+      "name": "Full name",
+      "phone": "Phone",
+      "submit": "Sign up",
+      "haveAccount": "Already have an account?"
+    },
+    "twofa": {
+      "title": "Two-factor authentication",
+      "intro": "Enter the 6-digit code from your authenticator app.",
+      "codeLabel": "Code",
+      "verify": "Verify & log in",
+      "setupTitle": "Set up two-factor authentication",
+      "setupIntro": "Admin accounts require an authenticator app (Google Authenticator, Authy, Microsoft Authenticator…). Add the key below to your app, then confirm with the current code.",
+      "secretLabel": "Setup key",
+      "uriLabel": "Setup link (otpauth)",
+      "setupHelp": "In your authenticator app choose “Enter a setup key”, paste the key, and keep the default time-based settings.",
+      "activate": "Activate & log in",
+      "backToLogin": "Back to login"
+    },
+    "phone": {
+      "title": "Log in with phone",
+      "phoneLabel": "Phone number",
+      "send": "Send code",
+      "sending": "Sending…",
+      "sentInfo": "Code sent. (Dev mode: the code is printed in the server console.)",
+      "codeSentTo": "We sent a 6-digit code to {phone}.",
+      "code": "Code",
+      "nameNew": "Your name (only needed for new accounts)",
+      "verify": "Verify & log in",
+      "checking": "Checking…",
+      "resend": "Resend code",
+      "preferEmail": "Prefer email?"
+    },
+    "errors": {
+      "invalid": "Please enter a valid email and password.",
+      "credentials": "Wrong email or password.",
+      "exists": "An account with this email already exists.",
+      "phoneExists": "This phone number is already registered to another account.",
+      "signupInvalid": "Please check your details — password must be at least 8 characters.",
+      "rate": "Too many attempts — please wait a few minutes and try again.",
+      "locked": "Too many failed attempts — this account is locked for 15 minutes.",
+      "generic": "Something went wrong. Try again."
+    }
+  },
+  "requestForm": {
+    "title": "Request a part",
+    "subtitle": "Tell us your car and the part you need. We'll source it and send you a price to approve — no payment until you accept the quote.",
+    "steps": {
+      "car": "Your car",
+      "part": "The part",
+      "color": "Color code",
+      "source": "Source",
+      "details": "Details & submit"
+    },
+    "sourceTitle": "Where should we source your part from?",
+    "sourceHint": "Your choice is a preference — our team confirms the actual source with your quote.",
+    "sourceChina": "China",
+    "sourceChinaHint": "Delivery in about 2 months",
+    "sourceDubai": "Dubai",
+    "sourceDubaiHint": "Delivery in about 20 days",
+    "brand": "Brand",
+    "model": "Model",
+    "years": "Years",
+    "yearsHint": "Pick the range that includes your car's year — parts usually fit the whole generation.",
+    "selectBrand": "Select brand…",
+    "selectModel": "Select model…",
+    "selectYears": "Select year range…",
+    "category": "Category",
+    "type": "Type",
+    "part": "Part",
+    "selectCategory": "Select category…",
+    "selectType": "Select type…",
+    "selectPart": "Select part…",
+    "colorLabel": "Paint color code for your {brand}",
+    "colorPlaceholder": "e.g. \"49\" or \"1G3\"",
+    "colorHelper": "This part comes painted, so we need your car's exact color code. You'll find it on a sticker in the driver's door jamb (open the driver door and look at the body frame), or in your car's registration papers. It's usually 2–3 letters or numbers labeled \"C\", \"Color\", or \"Paint\".",
+    "summary": "Your request",
+    "colorSummary": "color {code}",
+    "notes": "Notes",
+    "notesPlaceholder": "Anything that helps us find the exact part — VIN, trim, original or aftermarket preference…",
+    "photo": "Photo",
+    "photoMax": "(optional, max 5 MB)",
+    "photoHint": "A photo of the part or your VIN plate helps us quote faster.",
+    "submit": "Submit request",
+    "submitting": "Submitting…",
+    "asideQuoteTitle": "How quoting works",
+    "asideQuoteBody": "Submit your request and our team sources the part from China or Dubai. You get a price in your account — nothing is paid until you approve it.",
+    "asideColorTitle": "Where's my color code?",
+    "asideColorBody": "On a sticker in the driver's door jamb, or in your registration papers — usually 2–3 letters/numbers marked \"C\", \"Color\" or \"Paint\". Only needed for painted parts.",
+    "asideNotifyTitle": "What happens next",
+    "asideNotifyBody": "We'll notify you here as soon as your quote is ready — watch the bell at the top.",
+    "typicalRange": "Typical range: ${min}–${max}",
+    "typicalRangeHint": "Rough estimate only — submit the request and we'll confirm the exact price."
+  },
+  "myRequests": {
+    "title": "My requests",
+    "newRequest": "New request",
+    "submittedTitle": "Request submitted ✓",
+    "submittedBody": "Our team will check part availability and send you a price quote to approve. You'll see it here as soon as it's ready.",
+    "empty": "No requests yet.",
+    "requestFirst": "Request your first part",
+    "colorBadge": "color {code}",
+    "quotedPrice": "Quoted price:",
+    "reviewApprove": "review & approve",
+    "submittedOn": "Submitted {date}",
+    "viewDetails": "View details"
+  },
+  "detail": {
+    "back": "My requests",
+    "yourQuote": "Your quote",
+    "partPrice": "Part price",
+    "shippingCost": "Shipping & sourcing",
+    "taxCost": "Tax",
+    "deliveryCost": "Local delivery",
+    "totalLabel": "Total",
+    "sourcedFrom": "Sourced from {source}",
+    "sourceChina": "China",
+    "sourceDubai": "Dubai",
+    "etaChina": "~2 months",
+    "etaDubai": "~20 days",
+    "requestedSource": "Requested source",
+    "fullPaymentNote": "The full total is paid upfront — sourcing starts only after your payment is confirmed. No partial payments.",
+    "noChargeHint": "Nothing is charged until you approve — payment happens after approval.",
+    "approve": "Approve quote",
+    "reject": "Reject",
+    "paymentTitle": "Payment",
+    "total": "Total:",
+    "methodSelectedNote": "({method} selected — waiting for our team to confirm)",
+    "rejectedClosed": "You rejected this quote, so the request is closed. Need the part after all?",
+    "submitNew": "Submit a new request",
+    "paidBanner": "Payment confirmed ({method}) — we're ordering your part. Track progress below.",
+    "progress": "Progress",
+    "banners": {
+      "approved": "Quote approved — now choose how you'd like to pay.",
+      "rejected": "Quote rejected. This request is closed.",
+      "methodSaved": "Payment method saved — our team will confirm your payment shortly."
+    }
+  },
+  "payment": {
+    "cod": "Cash on delivery",
+    "codHint": "Pay in cash when you receive the part.",
+    "gateway": "Online payment",
+    "gatewayHint": "FastPay / Zaincash / Qi Card — our team will contact you to complete it.",
+    "bank": "Bank transfer",
+    "bankHint": "Transfer to our account, then upload the receipt below (optional but speeds things up).",
+    "proofLabel": "Proof of transfer",
+    "proofNote": "(optional, max 5 MB)",
+    "proofReplace": "A receipt is already uploaded — choosing a new file replaces it.",
+    "confirm": "Confirm payment method",
+    "update": "Update payment method"
+  },
+  "tracking": {
+    "title": "Order tracking",
+    "current": "current",
+    "paidHint": "Your order is confirmed — tracking starts as soon as we order the part."
+  },
+  "statuses": {
+    "PENDING": "Pending quote",
+    "QUOTED": "Quote ready",
+    "APPROVED": "Approved",
+    "REJECTED": "Quote rejected",
+    "PAID": "Paid",
+    "SOURCING": "Ordering from supplier",
+    "SHIPPED": "Shipped",
+    "ARRIVED": "Arrived in Kurdistan",
+    "READY": "Ready for pickup/delivery",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "emptyHint": "Quote updates, payment confirmations, and delivery progress will all appear here.",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "unread": "unread",
+    "viewRequest": "View request"
+  },
+  "admin": {
+    "badge": "Admin",
+    "nav": {
+      "dashboard": "Dashboard",
+      "requests": "Requests",
+      "vehicles": "Vehicles",
+      "parts": "Parts"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "requestsToday": "Requests today",
+      "pendingQuotes": "Pending quotes",
+      "revenueMonth": "Revenue this month",
+      "customers": "Customers",
+      "catalogParts": "Parts in catalog",
+      "byStage": "Orders by stage",
+      "recentLogins": "Recent admin logins",
+      "noLogins": "No login attempts recorded yet.",
+      "loginOk": "Success",
+      "loginFail": "Failed",
+      "queueLink": "Open the requests queue",
+      "queueHint": "to review and quote incoming part requests."
+    },
+    "queue": {
+      "title": "Requests queue",
+      "all": "All",
+      "date": "Date",
+      "customer": "Customer",
+      "vehicle": "Vehicle",
+      "part": "Part",
+      "price": "Price",
+      "status": "Status",
+      "open": "Open",
+      "empty": "No requests.",
+      "emptyHint": "New customer requests will land here as soon as they come in.",
+      "lowConversion": "Low conversion",
+      "lowConversionHint": "Several requests, no approvals yet — likely checking prices."
+    },
+    "taxonomy": {
+      "vehiclesTitle": "Vehicle taxonomy",
+      "vehiclesSubtitle": "Brands → models → year ranges. These power the dropdowns in the customer request form.",
+      "brandPlaceholder": "New brand name (e.g. Toyota)",
+      "addBrand": "Add brand",
+      "modelPlaceholder": "New model (e.g. Land Cruiser)",
+      "addModel": "Add model",
+      "yearFrom": "From",
+      "yearTo": "To",
+      "addYears": "+ years",
+      "delete": "Delete",
+      "modelsCount": "{count} models",
+      "noModels": "No models yet.",
+      "noBrands": "No brands yet — add one above, or run the seed script.",
+      "partsTitle": "Part taxonomy",
+      "partsSubtitle": "Categories → sub-categories → parts. Painted parts ask the customer for a color code; the optional price range is a rough public estimate.",
+      "categoryPlaceholder": "New category (e.g. Exterior)",
+      "addCategory": "Add category",
+      "subPlaceholder": "New sub-category (e.g. Bumpers)",
+      "addSub": "Add",
+      "subsCount": "{count} sub-categories",
+      "partPlaceholder": "New part (e.g. Front Bumper)",
+      "addPart": "+ part",
+      "needsColor": "needs color code",
+      "colorChip": "color code",
+      "setColor": "Set color code",
+      "unsetColor": "Unset color code",
+      "noSubs": "No sub-categories yet.",
+      "noCategories": "No categories yet — add one above, or run the seed script.",
+      "priceRange": "Typical price $",
+      "priceMin": "Min",
+      "priceMax": "Max",
+      "priceRangeSet": "Save"
+    },
+    "detail": {
+      "backToQueue": "Back to queue",
+      "request": "Request",
+      "customer": "Customer",
+      "timeline": "Status timeline",
+      "sendQuote": "Send quote",
+      "updateQuote": "Update quote",
+      "source": "Source",
+      "china": "China",
+      "dubai": "Dubai",
+      "price": "Price (USD)",
+      "partPrice": "Part price (USD)",
+      "shippingCost": "Shipping / sourcing (USD)",
+      "taxCost": "Tax (USD)",
+      "deliveryCost": "Local delivery (USD)",
+      "totalLabel": "Total",
+      "optionalZero": "blank = 0",
+      "customerPrefers": "Customer prefers:",
+      "etaChina": "~2 months",
+      "etaDubai": "~20 days",
+      "notesToCustomer": "Notes to customer",
+      "payment": "Payment",
+      "method": "Method",
+      "proof": "Proof of transfer",
+      "confirmPayment": "Confirm payment received",
+      "shipment": "Shipment",
+      "current": "Current",
+      "markAs": "Mark as \"{status}\"",
+      "completedNote": "Order completed — no further status changes.",
+      "quoteSentBanner": "Quote sent — the customer has been notified in-app.",
+      "paidConfirmedBanner": "Payment confirmed — the customer has been notified in-app.",
+      "statusUpdatedBanner": "Status updated — the customer has been notified in-app.",
+      "colorCode": "Color code",
+      "submittedAt": "Submitted",
+      "customerNotes": "Customer notes",
+      "attachedPhoto": "Attached photo",
+      "notQuotable": "Quoting is only available while the request is pending or quoted.",
+      "waitingMethod": "Customer approved the quote — waiting for them to choose a payment method.",
+      "confirmHint": "Only confirm once the money is actually in hand/account.",
+      "advanceHint": "Statuses advance one step at a time and can't be undone, so update only when the stage is really reached.",
+      "notePlaceholder": "e.g. cleared customs, 3–5 days to warehouse"
+    }
+  },
+  "marketing": {
+    "backHome": "Back to home"
+  },
+  "about": {
+    "title": "About CarParts Kurdistan",
+    "p1": "CarParts Kurdistan connects drivers across Kurdistan with hard-to-find car parts. Tell us your car and the part you need — we source it, usually from China or Dubai, and send you a price before anything is charged.",
+    "p2": "We don't stock parts on a shelf. Every request is sourced individually, so we can cover any brand, model, or year — not just what happens to be in stock.",
+    "p3": "You approve the price, choose how to pay, and track your order until it arrives."
+  },
+  "contact": {
+    "title": "Contact us",
+    "body": "The fastest way to reach us is to submit a part request from your account — our team reviews it and sends you a quote. WhatsApp and social channels are on their way; for now, questions about an existing order are best handled from My Requests once you're logged in.",
+    "cta": "Submit a request"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "How does pricing work?",
+        "a": "Prices aren't fixed in advance — we source parts individually. Submit a request with your car and part, and we'll send you a price to review. Nothing is charged until you approve it. Some parts show a typical price range on the request form so you have a rough idea before you submit."
+      },
+      {
+        "q": "Where do parts come from?",
+        "a": "Mainly China and Dubai, depending on what's available and how quickly you need it. We'll tell you the source when we send your quote."
+      },
+      {
+        "q": "How long does it take?",
+        "a": "It depends on the part and where it's sourced from — we'll keep you updated at every stage, from ordering to arrival in Kurdistan."
+      },
+      {
+        "q": "How do I pay?",
+        "a": "Once you approve a quote, choose cash on delivery, bank transfer, or online payment. You'll see exactly how to complete each option in your account."
+      },
+      {
+        "q": "What if I don't know my car's paint color code?",
+        "a": "For painted parts, we'll ask for a color code — you can usually find it on a sticker in the driver's door jamb, or in your registration papers. We show a helper with more detail when it's needed."
+      },
+      {
+        "q": "Can I track my order?",
+        "a": "Yes — once your order is paid, its status updates as it moves from sourcing to shipped to arrived to ready for pickup or delivery, all visible in My Requests."
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of use",
+    "updated": "Last reviewed {year}",
+    "sections": [
+      {
+        "h": "The service",
+        "b": "CarParts Kurdistan is a quote-request platform, not a live catalog with fixed prices. Submitting a request does not create a binding order — an order is only confirmed once you approve a quote and complete payment."
+      },
+      {
+        "h": "Quotes",
+        "b": "Prices are sourced individually per request and may change based on availability. If a quote is no longer valid, we'll ask you to request an updated price."
+      },
+      {
+        "h": "Payment",
+        "b": "You choose a payment method after approving a quote. For bank transfers, we may ask for proof of payment before confirming your order."
+      },
+      {
+        "h": "Cancellations",
+        "b": "You may reject a quote at any time before payment at no charge. Once payment is confirmed, cancellations are handled case by case — contact us as soon as possible."
+      },
+      {
+        "h": "Accuracy",
+        "b": "We do our best to source the correct part based on the details you provide. Please double-check your vehicle and part details before submitting, especially color codes for painted parts."
+      },
+      {
+        "h": "Changes",
+        "b": "These terms may be updated from time to time. Continuing to use the service after a change means you accept the update."
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "updated": "Last reviewed {year}",
+    "sections": [
+      {
+        "h": "What we collect",
+        "b": "Your name, phone number and/or email, the vehicle and part details you submit, any photos you attach, and your order and payment-method history."
+      },
+      {
+        "h": "How we use it",
+        "b": "To process your part requests, send you quotes and status updates, and contact you about your orders — in-app, and via WhatsApp where available."
+      },
+      {
+        "h": "Payment information",
+        "b": "We don't store full payment card details. Bank transfer proof images are used only to confirm your payment."
+      },
+      {
+        "h": "Sharing",
+        "b": "We don't sell your information. We only share what's needed with our sourcing partners to fulfill your request."
+      },
+      {
+        "h": "Your data",
+        "b": "You can ask us to review, correct, or delete your account information at any time."
+      },
+      {
+        "h": "Changes",
+        "b": "This policy may be updated from time to time. We'll keep the latest version here."
+      }
+    ]
+  }
+}
