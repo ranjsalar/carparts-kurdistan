@@ -36,7 +36,10 @@
   --color-accent-300: #f3a868;
   --color-accent-400: #ee8a3c;
   --color-accent-500: #e8721f;
-  --color-accent-600: #c95c15;
+  /* accent-600 is the base for text-bearing amber buttons; darkened so white
+     button labels clear WCAG AA (4.5:1). accent-500 stays the brighter fill
+     used for icons, rings and badges. */
+  --color-accent-600: #c25614;
   --color-accent-700: #a34712;
   --color-accent-800: #7e3812;
   --color-accent-900: #5f2c11;
@@ -45,8 +48,11 @@
   --color-steel-100: #e9eeee;
   --color-steel-200: #d8e0e1;
   --color-steel-300: #bcc8ca;
-  --color-steel-400: #94a5a8;
-  --color-steel-500: #6d7f83;
+  /* steel-400/500 darkened (2026-07-25) so de-emphasized text — timestamps,
+     hints, secondary labels — clears WCAG AA 4.5:1 on white. Both still read
+     as distinct hierarchy steps below steel-600/700. */
+  --color-steel-400: #69797d;
+  --color-steel-500: #5c6e71;
   --color-steel-600: #536467;
   --color-steel-700: #415054;
   --color-steel-800: #2c383c;

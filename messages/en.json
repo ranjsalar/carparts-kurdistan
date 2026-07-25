@@ -105,7 +105,18 @@
     "totpWrong": "Wrong code — check your authenticator app and try again.",
     "totpExpiredSession": "This login step expired — please log in again.",
     "accountLocked": "Too many failed attempts — this account is locked for 15 minutes.",
-    "adminPhoneLogin": "Admin accounts must log in with email and two-factor authentication."
+    "adminPhoneLogin": "Admin accounts must log in with email and two-factor authentication.",
+    "notPayable": "This request can't be paid right now.",
+    "paymentPending": "You already have a payment awaiting confirmation on this request.",
+    "alreadyPaid": "This request is already fully paid.",
+    "firstMustBeOnline": "The first payment must be made online (FIB, FastPay or Qi Card).",
+    "invalidPlan": "Choose to pay half now or in full.",
+    "senderRequired": "Enter the name and phone number the payment was sent from.",
+    "paymentNotFound": "Payment not found.",
+    "paymentNotPending": "This payment has already been handled.",
+    "rejectReasonRequired": "Enter a reason for rejecting this payment.",
+    "accountFieldsRequired": "Enter both the account name and number.",
+    "settleBeforeComplete": "Clear the outstanding balance before completing the order."
   },
   "auth": {
     "login": {
@@ -238,7 +249,7 @@
     "etaChina": "~2 months",
     "etaDubai": "~20 days",
     "requestedSource": "Requested source",
-    "fullPaymentNote": "The full total is paid upfront — sourcing starts only after your payment is confirmed. No partial payments.",
+    "fullPaymentNote": "Once you approve, you can pay half now and the rest later, or pay in full — your choice. The first payment is made online, and sourcing begins as soon as it's confirmed; any remaining balance is settled before delivery.",
     "noChargeHint": "Nothing is charged until you approve — payment happens after approval.",
     "approve": "Approve quote",
     "reject": "Reject",
@@ -247,26 +258,55 @@
     "methodSelectedNote": "({method} selected — waiting for our team to confirm)",
     "rejectedClosed": "You rejected this quote, so the request is closed. Need the part after all?",
     "submitNew": "Submit a new request",
-    "paidBanner": "Payment confirmed ({method}) — we're ordering your part. Track progress below.",
+    "paidInFullBanner": "Paid in full — we're ordering your part. Track progress below.",
     "progress": "Progress",
     "banners": {
       "approved": "Quote approved — now choose how you'd like to pay.",
       "rejected": "Quote rejected. This request is closed.",
-      "methodSaved": "Payment method saved — our team will confirm your payment shortly."
+      "paymentSubmitted": "Payment submitted — our team will verify and confirm it shortly."
     }
   },
   "payment": {
-    "cod": "Cash on delivery",
-    "codHint": "Pay in cash when you receive the part.",
-    "gateway": "Online payment",
-    "gatewayHint": "FastPay / Zaincash / Qi Card — our team will contact you to complete it.",
-    "bank": "Bank transfer",
-    "bankHint": "Transfer to our account, then upload the receipt below (optional but speeds things up).",
-    "proofLabel": "Proof of transfer",
-    "proofNote": "(optional, max 5 MB)",
-    "proofReplace": "A receipt is already uploaded — choosing a new file replaces it.",
-    "confirm": "Confirm payment method",
-    "update": "Update payment method"
+    "methodFib": "FIB (First Iraqi Bank)",
+    "methodFastpay": "FastPay",
+    "methodQicard": "Qi Card",
+    "methodCod": "Cash on delivery",
+    "methodCodDesc": "Pay the remaining ${amount} in cash when you receive the part.",
+    "planTitle": "How would you like to pay?",
+    "planHalf": "Pay half now",
+    "planHalfDesc": "Pay half now and the rest once we confirm this payment.",
+    "planFull": "Pay in full now",
+    "planFullDesc": "Pay the whole amount in one payment.",
+    "methodTitle": "Choose a payment method",
+    "remainingAmount": "Remaining balance to pay: ${amount}",
+    "onlineOnlyNote": "The first payment must be made online (FIB, FastPay or Qi Card).",
+    "senderTitle": "Your payment details",
+    "senderName": "Your account / bank name",
+    "senderPhone": "Your phone number",
+    "amountToSend": "Amount to send",
+    "proofLabel": "Payment proof",
+    "proofNote": "(optional)",
+    "continue": "Continue",
+    "back": "Back",
+    "confirmTitle": "Send your payment",
+    "confirmInstructions": "Send ${amount} to the account below, then tap \"I've sent the payment\".",
+    "receivingAccount": "Send to",
+    "accountName": "Account name",
+    "accountNumber": "Account number / phone",
+    "sentButton": "I've sent the payment",
+    "codConfirmTitle": "Confirm cash on delivery",
+    "codConfirmBody": "You'll pay the remaining ${amount} in cash when the part is delivered. Our team will confirm this arrangement.",
+    "pendingTitle": "Payment pending confirmation",
+    "pendingBody": "You submitted ${amount} via {method}. Our team will verify and confirm it shortly.",
+    "balanceTotal": "Total",
+    "balancePaid": "Paid",
+    "balanceRemaining": "Remaining",
+    "settleTitle": "Settle your balance",
+    "sourcingWithBalance": "Sourcing has begun — we're processing your order. ${remaining} still to settle before delivery.",
+    "partialConfirmed": "We confirmed ${amount}. ${remaining} remaining — pay it below whenever you're ready.",
+    "rejectedTitle": "Your last payment wasn't confirmed",
+    "rejectedRetry": "Please submit a new payment below.",
+    "placeholderWarning": "⚠ Placeholder account — the business hasn't entered real payment details yet."
   },
   "tracking": {
     "title": "Order tracking",
@@ -293,7 +333,58 @@
     "markRead": "Mark as read",
     "markAllRead": "Mark all as read",
     "unread": "unread",
-    "viewRequest": "View request"
+    "viewRequest": "View request",
+    "templates": {
+      "quoteSent": {
+        "title": "Your quote is ready",
+        "body": "{part} for your {brand} {model}: ${total}. Open “My requests” to review and approve."
+      },
+      "quoteUpdated": {
+        "title": "Your quote was updated",
+        "body": "{part} for your {brand} {model}: ${total}. Open “My requests” to review and approve."
+      },
+      "paymentConfirmed": {
+        "title": "Payment confirmed",
+        "body": "We received your payment for the {part} ({brand} {model}). We''re sourcing your part now."
+      },
+      "paymentSourcingStarted": {
+        "title": "Payment confirmed — sourcing started",
+        "body": "Your payment of ${amount} is confirmed — we''ve started sourcing your {part}. ${remaining} remaining, to be settled before delivery."
+      },
+      "paymentSettled": {
+        "title": "Balance settled",
+        "body": "Your remaining balance of ${amount} for the {part} is settled. Thank you!"
+      },
+      "paymentConfirmedPartial": {
+        "title": "Payment confirmed",
+        "body": "We confirmed your payment of ${amount} for the {part}. ${remaining} remaining."
+      },
+      "paymentRejected": {
+        "title": "Payment needs attention",
+        "body": "Your payment of ${amount} for the {part} couldn''t be confirmed: {reason}. Please submit a new payment."
+      },
+      "shipmentSourcing": {
+        "title": "Your part is being ordered",
+        "body": "We''ve ordered your {part} from the supplier."
+      },
+      "shipmentShipped": {
+        "title": "Your part has shipped",
+        "body": "Your {part} is on its way to Kurdistan."
+      },
+      "shipmentArrived": {
+        "title": "Your part has arrived in Kurdistan",
+        "body": "Your {part} has arrived in the country and is being prepared."
+      },
+      "shipmentReady": {
+        "title": "Ready for pickup / delivery",
+        "body": "Your {part} is ready! We''ll be in touch to arrange pickup or delivery."
+      },
+      "shipmentCompleted": {
+        "title": "Order completed",
+        "body": "Your {part} order is complete. Thanks for using CarParts Kurdistan!"
+      },
+      "noteSuffix": "Note: {note}"
+    }
   },
   "admin": {
     "badge": "Admin",
@@ -302,6 +393,43 @@
       "requests": "Requests",
       "vehicles": "Vehicles",
       "parts": "Parts"
+    },
+    "payments": {
+      "navTitle": "Payments",
+      "title": "Payments to confirm",
+      "empty": "No payments are waiting for confirmation.",
+      "pendingBadge": "Pending",
+      "request": "Request",
+      "customer": "Customer",
+      "sender": "Sender",
+      "senderPhone": "Sender phone",
+      "balancePaid": "Paid",
+      "balanceRemaining": "Remaining",
+      "balanceTotal": "Total",
+      "proof": "Proof",
+      "noProof": "No proof attached.",
+      "noneYet": "No payments submitted yet.",
+      "confirm": "Confirm payment",
+      "reject": "Reject",
+      "rejectReasonPlaceholder": "Reason (the customer will see this)…",
+      "confirmHint": "Only confirm once you've verified the money actually arrived.",
+      "viewRequest": "Open request",
+      "alert": "{count} payment(s) waiting for confirmation — review now",
+      "confirmedBanner": "Payment confirmed.",
+      "rejectedBanner": "Payment rejected — the customer has been notified.",
+      "status_PENDING_CONFIRMATION": "Pending",
+      "status_CONFIRMED": "Confirmed",
+      "status_REJECTED": "Rejected"
+    },
+    "settings": {
+      "navTitle": "Settings",
+      "title": "Payment receiving accounts",
+      "intro": "These are the accounts customers are told to send payments to. Set real details before launch — placeholders are shown until you do.",
+      "accountName": "Account name",
+      "accountNumber": "Account number / phone",
+      "save": "Save",
+      "saved": "Saved.",
+      "placeholderBadge": "Placeholder"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -315,6 +443,17 @@
       "noLogins": "No login attempts recorded yet.",
       "loginOk": "Success",
       "loginFail": "Failed",
+      "loginPending": "In progress",
+      "auditNotes": {
+        "password_fail": "Wrong password",
+        "password_ok_awaiting_totp": "Password OK — awaiting 2FA",
+        "totp_fail": "Wrong 2FA code",
+        "totp_ok": "2FA verified",
+        "totp_setup_fail": "2FA setup failed",
+        "totp_setup_ok": "2FA setup complete",
+        "locked": "Account locked",
+        "phone_otp_blocked": "Phone login blocked for admin"
+      },
       "queueLink": "Open the requests queue",
       "queueHint": "to review and quote incoming part requests."
     },
@@ -327,6 +466,7 @@
       "part": "Part",
       "price": "Price",
       "status": "Status",
+      "remaining": "remaining",
       "open": "Open",
       "empty": "No requests.",
       "emptyHint": "New customer requests will land here as soon as they come in.",

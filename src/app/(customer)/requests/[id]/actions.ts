@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { decideQuote, selectPaymentMethod } from "@/lib/payments";
+import { decideQuote, submitPayment } from "@/lib/payments";
 import { saveUpload } from "@/lib/storage";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 
@@ -22,6 +22,7 @@ async function finish(requestId: string, result: { ok: boolean; error?: string }
   revalidatePath(`/requests/${requestId}`);
   revalidatePath("/requests");
   revalidatePath("/admin/requests");
+  revalidatePath("/admin/payments");
   if (!result.ok) {
     redirect(`/requests/${requestId}?error=${encodeURIComponent(result.error ?? "Failed")}`);
   }
@@ -44,15 +45,23 @@ export async function rejectQuoteAction(formData: FormData) {
   await finish(requestId, result, "rejected");
 }
 
-export async function choosePaymentAction(formData: FormData) {
+export async function submitPaymentAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   const requestId = requestIdFrom(formData);
-  const method = formData.get("method");
 
+  const str = (key: string) => {
+    const v = formData.get(key);
+    return typeof v === "string" ? v : "";
+  };
+  const planRaw = str("plan");
+  const plan = planRaw === "half" || planRaw === "full" ? planRaw : undefined;
+  const method = str("method") as PaymentMethod;
+
+  // Optional receipt upload — validated by content, never trusted by name.
   let proofUrl: string | undefined;
   const proof = formData.get("proof");
-  if (method === "BANK_TRANSFER" && proof instanceof File && proof.size > 0) {
+  if (proof instanceof File && proof.size > 0) {
     const saved = await saveUpload(proof);
     if (!saved.ok) {
       redirect(`/requests/${requestId}?error=${encodeURIComponent(saved.error)}`);
@@ -60,11 +69,12 @@ export async function choosePaymentAction(formData: FormData) {
     proofUrl = saved.url;
   }
 
-  const result = await selectPaymentMethod(
-    user.id,
-    requestId,
-    (typeof method === "string" ? method : "") as PaymentMethod,
+  const result = await submitPayment(user.id, requestId, {
+    plan,
+    method,
+    senderAccountName: str("senderAccountName"),
+    senderPhone: str("senderPhone"),
     proofUrl,
-  );
-  await finish(requestId, result, "method");
+  });
+  await finish(requestId, result, "paymentSubmitted");
 }

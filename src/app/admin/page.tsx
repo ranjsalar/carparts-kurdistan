@@ -3,11 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses } from "@/lib/status";
 import { SHIPMENT_STAGES } from "@/lib/shipments";
+import { formatUsd } from "@/lib/format";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
 export default async function AdminDashboard() {
   const t = await getTranslations("admin.dashboard");
   const ts = await getTranslations("statuses");
+  const tn = await getTranslations("admin.dashboard.auditNotes");
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -28,7 +30,7 @@ export default async function AdminDashboard() {
     ]);
 
   const stageCounts = new Map(byStatus.map((g) => [g.status, g._count._all]));
-  const revenueMonth = revenue._sum.priceUsd?.toString() ?? "0";
+  const revenueMonth = formatUsd(revenue._sum.priceUsd);
 
   const stats = [
     { label: t("requestsToday"), value: String(requestsToday) },
@@ -99,21 +101,31 @@ export default async function AdminDashboard() {
           <p className="px-5 py-6 text-caption text-steel-400">{t("noLogins")}</p>
         ) : (
           <ul className="divide-y divide-steel-100">
-            {recentLogins.map((log) => (
+            {recentLogins.map((log) => {
+              // "password OK, awaiting 2FA" is an intermediate step, not a
+              // failure — it's logged success=false only because no session was
+              // issued yet, so show it as neutral rather than red.
+              const pending = log.note === "password_ok_awaiting_totp";
+              const badge = pending
+                ? { cls: "bg-accent-50 text-accent-700 ring-1 ring-accent-200", label: t("loginPending") }
+                : log.success
+                  ? { cls: "bg-success-50 text-success-700 ring-1 ring-success-100", label: t("loginOk") }
+                  : { cls: "bg-danger-50 text-danger-700 ring-1 ring-danger-100", label: t("loginFail") };
+              return (
               <li key={log.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2.5">
                 <span
-                  className={`rounded-full px-2.5 py-0.5 font-heading text-overline font-semibold uppercase ${
-                    log.success
-                      ? "bg-success-50 text-success-700 ring-1 ring-success-100"
-                      : "bg-danger-50 text-danger-700 ring-1 ring-danger-100"
-                  }`}
+                  className={`rounded-full px-2.5 py-0.5 font-heading text-overline font-semibold uppercase ${badge.cls}`}
                 >
-                  {log.success ? t("loginOk") : t("loginFail")}
+                  {badge.label}
                 </span>
                 <span className="text-caption text-steel-700" dir="ltr">
                   {log.email}
                 </span>
-                {log.note && <span className="text-overline text-steel-400">{log.note}</span>}
+                {log.note && (
+                  <span className="text-caption text-steel-500">
+                    {tn.has(log.note) ? tn(log.note) : log.note}
+                  </span>
+                )}
                 <span className="ms-auto text-overline text-steel-400" dir="ltr">
                   {log.ip} ·{" "}
                   {log.createdAt.toLocaleString("en-GB", {
@@ -124,7 +136,8 @@ export default async function AdminDashboard() {
                   })}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>

@@ -41,7 +41,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
             >
               <IconBell size={20} />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 font-heading text-[10px] font-bold text-white">
+                <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-600 px-1 font-heading text-[10px] font-bold text-white">
                   {unreadCount}
                 </span>
               )}

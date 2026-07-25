@@ -514,6 +514,23 @@ async function main() {
   });
   console.log(`Admin user: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
 
+  // Payment receiving accounts — the business accounts customers send money to.
+  // Seeded with clearly-labeled placeholders so the flow works end-to-end
+  // before real details are entered on the admin settings page. Cash on
+  // delivery has no receiving account (it's collected in person).
+  for (const method of ["FIB", "FASTPAY", "QICARD"] as const) {
+    await prisma.paymentReceivingAccount.upsert({
+      where: { method },
+      update: {}, // never clobber real values an admin has already entered
+      create: {
+        method,
+        accountName: "PLACEHOLDER — set real account before launch",
+        accountNumberOrPhone: "PLACEHOLDER — not a real number",
+      },
+    });
+  }
+  console.log("Payment receiving accounts seeded (placeholders).");
+
   for (const [brandName, models] of Object.entries(vehicles)) {
     const brand = await prisma.brand.upsert({
       where: { name: brandName },

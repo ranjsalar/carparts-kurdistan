@@ -8,7 +8,7 @@ const btnBase =
 
 export const btnPrimary = `${btnBase} bg-brand-700 px-5 py-2.5 text-white outline-brand-700 hover:bg-brand-800 active:bg-brand-900`;
 
-export const btnAccent = `${btnBase} bg-accent-500 px-5 py-2.5 text-white outline-accent-500 hover:bg-accent-600 active:bg-accent-700`;
+export const btnAccent = `${btnBase} bg-accent-600 px-5 py-2.5 text-white outline-accent-600 hover:bg-accent-700 active:bg-accent-800`;
 
 export const btnSecondary = `${btnBase} border border-steel-300 bg-white px-5 py-2.5 text-steel-700 outline-brand-700 hover:border-brand-500 hover:text-brand-700`;
 

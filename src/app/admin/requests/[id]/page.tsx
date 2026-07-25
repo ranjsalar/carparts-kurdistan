@@ -4,23 +4,47 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses } from "@/lib/status";
-import { paymentMethodLabels } from "@/lib/payments";
+import { formatUsd } from "@/lib/format";
+import { computePaymentState } from "@/lib/payments";
 import { nextShipmentStatus } from "@/lib/shipments";
 import { SubmitButton } from "@/components/SubmitButton";
-import { advanceShipmentAction, confirmPaymentAction } from "./actions";
+import { advanceShipmentAction } from "./actions";
+import { confirmPaymentAction, rejectPaymentAction } from "../../payments/actions";
 import { QuoteForm } from "./QuoteForm";
+
+const methodKeyMap: Record<string, string> = {
+  FIB: "methodFib",
+  FASTPAY: "methodFastpay",
+  QICARD: "methodQicard",
+  CASH_ON_DELIVERY: "methodCod",
+};
+
+const paymentStatusStyle: Record<string, string> = {
+  PENDING_CONFIRMATION: "bg-accent-50 text-accent-700 ring-1 ring-accent-200",
+  CONFIRMED: "bg-success-50 text-success-700 ring-1 ring-success-100",
+  REJECTED: "bg-danger-50 text-danger-700 ring-1 ring-danger-100",
+};
 
 export default async function RequestDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ sent?: string; paid?: string; advanced?: string; error?: string }>;
+  searchParams: Promise<{
+    sent?: string;
+    paid?: string;
+    advanced?: string;
+    rejected?: string;
+    confirmed?: string;
+    error?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { sent, paid, advanced, error } = await searchParams;
+  const { sent, paid, advanced, rejected, error } = await searchParams;
   const t = await getTranslations("admin.detail");
   const tq = await getTranslations("admin.queue");
+  const tpay = await getTranslations("admin.payments");
+  const tp = await getTranslations("payment");
   const ts = await getTranslations("statuses");
   const te = await getTranslations("errors");
 
@@ -34,10 +58,12 @@ export default async function RequestDetailPage({
       part: { include: { subCategory: { include: { category: true } } } },
       quotedBy: true,
       statusLogs: { orderBy: { createdAt: "asc" }, include: { createdBy: true } },
+      payments: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!request) notFound();
 
+  const payState = computePaymentState(request.priceUsd, request.payments);
   const canQuote = request.status === "PENDING" || request.status === "QUOTED";
   const nextStage = nextShipmentStatus(request.status);
   const inShipmentPhase =
@@ -71,7 +97,12 @@ export default async function RequestDetailPage({
       )}
       {paid && (
         <p className="mb-4 rounded-lg border-s-4 border-success-600 bg-success-50 px-4 py-2.5 text-caption text-success-700">
-          {t("paidConfirmedBanner")}
+          {tpay("confirmedBanner")}
+        </p>
+      )}
+      {rejected && (
+        <p className="mb-4 rounded-lg border-s-4 border-steel-400 bg-steel-100 px-4 py-2.5 text-caption text-steel-600">
+          {tpay("rejectedBanner")}
         </p>
       )}
       {advanced && (
@@ -113,7 +144,7 @@ export default async function RequestDetailPage({
               </div>
               <div>
                 <dt className="text-steel-400">{t("submittedAt")}</dt>
-                <dd className="font-medium text-steel-900">
+                <dd className="font-medium text-steel-900" dir="ltr">
                   {request.createdAt.toLocaleString("en-GB", {
                     day: "numeric",
                     month: "short",
@@ -171,7 +202,7 @@ export default async function RequestDetailPage({
                   </span>
                   <span className="flex-1">
                     {log.note && <span className="text-steel-700">{log.note}</span>}
-                    <span className="block text-xs text-steel-400">
+                    <span className="block text-xs text-steel-400" dir="ltr">
                       {log.createdAt.toLocaleString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -197,7 +228,7 @@ export default async function RequestDetailPage({
 
             {request.status === "QUOTED" && request.quotedAt && (
               <p className="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-caption text-brand-900" dir="ltr">
-                ${request.priceUsd?.toString()} ·{" "}
+                ${formatUsd(request.priceUsd)} ·{" "}
                 {request.source === "CHINA" ? t("china") : t("dubai")} ·{" "}
                 {request.quotedBy?.name ?? "admin"} ·{" "}
                 {request.quotedAt.toLocaleString("en-GB", {
@@ -238,60 +269,107 @@ export default async function RequestDetailPage({
             )}
           </section>
 
-          {(request.status === "APPROVED" || request.status === "PAID") && (
+          {(request.status === "APPROVED" || inShipmentPhase) && request.priceUsd !== null && (
             <section className="mt-6 rounded-2xl border border-steel-200 bg-white p-5">
               <h2 className="mb-3 font-heading text-overline font-semibold uppercase text-steel-500">
                 {t("payment")}
               </h2>
 
-              {request.status === "APPROVED" && !request.paymentMethod && (
-                <p className="text-sm text-steel-500">{t("waitingMethod")}</p>
-              )}
-
-              {request.paymentMethod && (
-                <p className="text-sm text-steel-700">
-                  {t("method")}:{" "}
-                  <span className="font-medium">{paymentMethodLabels[request.paymentMethod]}</span>
-                </p>
-              )}
-
-              {request.paymentProofUrl && (
-                <div className="mt-3">
-                  <p className="mb-1 text-sm text-steel-400">{t("proof")}</p>
-                  <a href={request.paymentProofUrl} target="_blank" rel="noreferrer">
-                    <Image
-                      src={request.paymentProofUrl}
-                      alt={t("proof")}
-                      width={128}
-                      height={128}
-                      className="h-32 w-32 rounded-lg object-cover ring-1 ring-steel-200"
-                    />
-                  </a>
+              {/* Balance */}
+              <div className="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-steel-100/70 p-3 text-center">
+                <div>
+                  <p className="text-overline uppercase text-steel-500">{tpay("balancePaid")}</p>
+                  <p className="font-heading text-body font-bold text-success-700" dir="ltr">
+                    ${payState.confirmed}
+                  </p>
                 </div>
-              )}
+                <div>
+                  <p className="text-overline uppercase text-steel-500">{tpay("balanceRemaining")}</p>
+                  <p className="font-heading text-body font-bold text-accent-700" dir="ltr">
+                    ${payState.remaining}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-overline uppercase text-steel-500">{tpay("balanceTotal")}</p>
+                  <p className="font-heading text-body font-bold text-steel-900" dir="ltr">
+                    ${payState.total}
+                  </p>
+                </div>
+              </div>
 
-              {request.status === "APPROVED" && request.paymentMethod && (
-                <form action={confirmPaymentAction} className="mt-4">
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <SubmitButton className="w-full rounded-lg bg-success-600 py-2.5 font-heading text-sm font-semibold text-white transition-colors hover:bg-success-700">
-                    {t("confirmPayment")}
-                  </SubmitButton>
-                  <p className="mt-1 text-xs text-steel-400">{t("confirmHint")}</p>
-                </form>
+              {request.payments.length === 0 ? (
+                <p className="text-sm text-steel-500">{tpay("noneYet")}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {request.payments.map((pay) => (
+                    <li key={pay.id} className="rounded-xl border border-steel-200 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-heading text-body font-bold text-steel-900" dir="ltr">
+                          ${pay.amountUsd.toString()}
+                        </span>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 font-heading text-overline font-semibold uppercase ${paymentStatusStyle[pay.status]}`}
+                        >
+                          {tpay(`status_${pay.status}`)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-caption text-steel-600">
+                        {tp(methodKeyMap[pay.method])}
+                        {pay.senderAccountName && (
+                          <span className="text-steel-500">
+                            {" "}
+                            · {pay.senderAccountName}
+                            {pay.senderPhone && (
+                              <span dir="ltr"> ({pay.senderPhone})</span>
+                            )}
+                          </span>
+                        )}
+                      </p>
+                      {pay.status === "REJECTED" && pay.adminNote && (
+                        <p className="mt-1 text-caption text-danger-700">“{pay.adminNote}”</p>
+                      )}
+                      {pay.proofUrl && (
+                        <a href={pay.proofUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block">
+                          <Image
+                            src={pay.proofUrl}
+                            alt={tpay("proof")}
+                            width={80}
+                            height={80}
+                            className="h-20 w-20 rounded-lg object-cover ring-1 ring-steel-200"
+                          />
+                        </a>
+                      )}
+                      {pay.status === "PENDING_CONFIRMATION" && (
+                        <div className="mt-3 space-y-2">
+                          <form action={confirmPaymentAction}>
+                            <input type="hidden" name="paymentId" value={pay.id} />
+                            <input type="hidden" name="requestId" value={request.id} />
+                            <input type="hidden" name="source" value="detail" />
+                            <SubmitButton className="w-full rounded-lg bg-success-600 py-2 font-heading text-sm font-semibold text-white transition-colors hover:bg-success-700">
+                              {tpay("confirm")}
+                            </SubmitButton>
+                          </form>
+                          <form action={rejectPaymentAction} className="flex gap-2">
+                            <input type="hidden" name="paymentId" value={pay.id} />
+                            <input type="hidden" name="requestId" value={request.id} />
+                            <input type="hidden" name="source" value="detail" />
+                            <input
+                              name="note"
+                              required
+                              placeholder={tpay("rejectReasonPlaceholder")}
+                              className="flex-1 rounded-lg border border-steel-300 px-3 py-2 text-caption text-steel-900 focus:border-danger-600 focus:outline-none focus:ring-2 focus:ring-danger-600/15"
+                            />
+                            <SubmitButton className="rounded-lg border border-steel-300 bg-white px-3 py-2 font-heading text-sm font-semibold text-danger-600 transition-colors hover:border-danger-600 hover:bg-danger-50">
+                              {tpay("reject")}
+                            </SubmitButton>
+                          </form>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
-
-              {request.status === "PAID" && (
-                <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                  {ts("PAID")}
-                  {request.paidAt &&
-                    ` · ${request.paidAt.toLocaleString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}`}
-                </p>
-              )}
+              <p className="mt-3 text-xs text-steel-400">{tpay("confirmHint")}</p>
             </section>
           )}
 

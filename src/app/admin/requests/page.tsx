@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses, statusLabels } from "@/lib/status";
+import { formatUsd } from "@/lib/format";
+import { computePaymentState } from "@/lib/payments";
 import { IconRequest } from "@/components/icons";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
@@ -29,6 +31,7 @@ export default async function RequestsQueuePage({
         carModel: true,
         yearRange: true,
         part: true,
+        payments: true,
       },
     }),
     prisma.partRequest.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -121,7 +124,10 @@ export default async function RequestsQueuePage({
               </tr>
             </thead>
             <tbody className="divide-y divide-steel-100">
-              {requests.map((r) => (
+              {requests.map((r) => {
+                const pay = computePaymentState(r.priceUsd, r.payments);
+                const owesBalance = pay.confirmedCents > 0 && pay.remainingCents > 0;
+                return (
                 <tr key={r.id} className="transition-colors hover:bg-brand-50/50">
                   <td className="whitespace-nowrap px-4 py-3.5 text-steel-500">
                     {r.createdAt.toLocaleDateString("en-GB", {
@@ -162,7 +168,7 @@ export default async function RequestsQueuePage({
                     className="whitespace-nowrap px-4 py-3.5 font-heading font-semibold text-steel-900"
                     dir="ltr"
                   >
-                    {r.priceUsd !== null ? `$${r.priceUsd.toString()}` : "—"}
+                    {r.priceUsd !== null ? `$${formatUsd(r.priceUsd)}` : "—"}
                   </td>
                   <td className="px-4 py-3.5">
                     <span
@@ -170,6 +176,14 @@ export default async function RequestsQueuePage({
                     >
                       {ts(r.status)}
                     </span>
+                    {owesBalance && (
+                      <span
+                        className="mt-1 block whitespace-nowrap font-heading text-overline font-semibold text-accent-700"
+                        dir="ltr"
+                      >
+                        ${pay.remaining} {t("remaining")}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3.5">
                     <Link
@@ -180,7 +194,8 @@ export default async function RequestsQueuePage({
                     </Link>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

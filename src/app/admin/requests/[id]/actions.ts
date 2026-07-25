@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { sendQuote } from "@/lib/quotes";
-import { confirmPayment } from "@/lib/payments";
 import { advanceShipment } from "@/lib/shipments";
 import type { SourceCountry } from "@/generated/prisma/enums";
 
@@ -61,18 +60,4 @@ export async function advanceShipmentAction(formData: FormData) {
     redirect(`/admin/requests/${requestId}?error=${encodeURIComponent(result.error)}`);
   }
   redirect(`/admin/requests/${requestId}?advanced=1`);
-}
-
-export async function confirmPaymentAction(formData: FormData) {
-  const admin = await requireAdmin();
-
-  const requestId = safeRequestId(formData.get("requestId"));
-  const result = await confirmPayment(admin.id, requestId);
-
-  revalidatePath(`/admin/requests/${requestId}`);
-  revalidatePath("/admin/requests");
-  if (!result.ok) {
-    redirect(`/admin/requests/${requestId}?error=${encodeURIComponent(result.error)}`);
-  }
-  redirect(`/admin/requests/${requestId}?paid=1`);
 }

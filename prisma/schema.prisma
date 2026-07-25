@@ -34,10 +34,11 @@ model User {
   failedLogins Int       @default(0)
   lockedUntil  DateTime?
 
-  requests      PartRequest[] @relation("CustomerRequests")
-  quotesSent    PartRequest[] @relation("QuotedBy")
-  statusUpdates StatusLog[]
-  notifications Notification[]
+  requests          PartRequest[] @relation("CustomerRequests")
+  quotesSent        PartRequest[] @relation("QuotedBy")
+  statusUpdates     StatusLog[]
+  notifications     Notification[]
+  paymentsConfirmed Payment[]     @relation("PaymentsConfirmed")
 }
 
 // One-time codes for phone login. Codes are 6 digits, short-lived, single-use.
@@ -155,10 +156,19 @@ enum SourceCountry {
   DUBAI
 }
 
+// Payment channels. The three online methods are Iraq-specific; cash on
+// delivery is only offered for a REMAINDER balance, never the first payment.
 enum PaymentMethod {
+  FIB
+  FASTPAY
+  QICARD
   CASH_ON_DELIVERY
-  ONLINE_GATEWAY
-  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  REJECTED
 }
 
 model PartRequest {
@@ -201,20 +211,66 @@ model PartRequest {
   quotedBy   User?          @relation("QuotedBy", fields: [quotedById], references: [id])
   quotedAt   DateTime?
 
-  // Customer decision + payment
-  approvedAt      DateTime?
-  paymentMethod   PaymentMethod?
-  paymentProofUrl String? // bank-transfer receipt uploaded by the customer
-  paidAt          DateTime?
+  // Customer decision + payment. Money paid is the sum of this request's
+  // CONFIRMED Payment rows (see Payment model) — there is deliberately no
+  // single lump paymentMethod field, since a request can be settled across
+  // several payments (half now, remainder later). paidAt is stamped only once
+  // the full balance is confirmed.
+  approvedAt DateTime?
+  paidAt     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   statusLogs    StatusLog[]
   notifications Notification[]
+  payments      Payment[]
 
   @@index([status])
   @@index([customerId])
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+// One customer payment attempt against a request. A request's "amount paid" is
+// the sum of its CONFIRMED payments; "remaining balance" is priceUsd minus that
+// sum. Every payment starts PENDING_CONFIRMATION and is manually confirmed (or
+// rejected, with a reason) by an admin who has verified the money arrived.
+model Payment {
+  id        String      @id @default(cuid())
+  requestId String
+  request   PartRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  amountUsd Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+
+  // Who sent it (for the admin to match against the incoming transfer).
+  // Null for cash on delivery, which has no online sender identity.
+  senderAccountName String?
+  senderPhone       String?
+  proofUrl          String? // optional receipt the customer chose to attach
+
+  status   PaymentStatus @default(PENDING_CONFIRMATION)
+  adminNote String?      // required reason when REJECTED; shown to the customer
+
+  confirmedByAdminId String?
+  confirmedByAdmin   User?   @relation("PaymentsConfirmed", fields: [confirmedByAdminId], references: [id], onDelete: SetNull)
+  confirmedAt        DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([status])
+}
+
+// Admin-configurable business accounts customers send payments to. Keyed by
+// method (only the three online methods are used). These are business details,
+// not secrets — no encryption needed, but the edit screen is admin-only.
+model PaymentReceivingAccount {
+  method               PaymentMethod @id
+  accountName          String
+  accountNumberOrPhone String
+  updatedAt            DateTime      @updatedAt
 }
 
 model StatusLog {
@@ -255,6 +311,11 @@ model Notification {
   requestId String?
   request   PartRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
   type      String // e.g. QUOTE_SENT, PAYMENT_CONFIRMED, STATUS_UPDATE
+  // title/body hold an English snapshot (fallback + future WhatsApp send).
+  // templateKey + params let the in-app list re-render in the viewer's
+  // current language instead of the language the notification was created in.
+  templateKey String?
+  params      Json?
   title     String
   body      String
   readAt    DateTime?

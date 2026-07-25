@@ -101,6 +101,13 @@ export async function sendQuote(
         userId: request.customerId,
         requestId,
         type: "QUOTE_SENT",
+        templateKey: isUpdate ? "quoteUpdated" : "quoteSent",
+        params: {
+          part: request.part.name,
+          brand: request.brand.name,
+          model: request.carModel.name,
+          total,
+        },
         title: isUpdate ? "Your quote was updated" : "Your quote is ready",
         body: `${request.part.name} for your ${request.brand.name} ${request.carModel.name}: $${total}. Open “My requests” to review and approve.`,
       },

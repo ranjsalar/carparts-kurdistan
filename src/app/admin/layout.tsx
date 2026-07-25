@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getSessionUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { logout } from "@/app/(auth)/actions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LogoMark } from "@/components/Logo";
@@ -15,6 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const t = await getTranslations("admin");
   const tc = await getTranslations("common");
+  const pendingPayments = await prisma.payment.count({
+    where: { status: "PENDING_CONFIRMATION" },
+  });
 
   return (
     <div className="min-h-screen bg-steel-50">
@@ -41,11 +45,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/requests" className="transition-colors hover:text-white">
                 {t("nav.requests")}
               </Link>
+              <Link
+                href="/admin/payments"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+              >
+                {t("payments.navTitle")}
+                {pendingPayments > 0 && (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-600 px-1 font-heading text-[10px] font-bold text-white">
+                    {pendingPayments}
+                  </span>
+                )}
+              </Link>
               <Link href="/admin/vehicles" className="transition-colors hover:text-white">
                 {t("nav.vehicles")}
               </Link>
               <Link href="/admin/parts" className="transition-colors hover:text-white">
                 {t("nav.parts")}
+              </Link>
+              <Link href="/admin/settings" className="transition-colors hover:text-white">
+                {t("settings.navTitle")}
               </Link>
             </nav>
           </div>
@@ -60,6 +78,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
+      {pendingPayments > 0 && (
+        <Link href="/admin/payments" className="block bg-accent-600 transition-colors hover:bg-accent-700">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-5 py-2 text-center font-heading text-caption font-semibold text-white">
+            {t("payments.alert", { count: pendingPayments })}
+            <span aria-hidden>→</span>
+          </div>
+        </Link>
+      )}
       <main className="mx-auto w-full max-w-6xl px-5 py-8">{children}</main>
     </div>
   );

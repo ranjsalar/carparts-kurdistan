@@ -6,12 +6,21 @@ import type { ComponentType } from "react";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
+import { formatUsd } from "@/lib/format";
+import { computePaymentState, getReceivingAccounts } from "@/lib/payments";
 import { SHIPMENT_STAGES } from "@/lib/shipments";
 import { IconBox, IconFinish, IconFlag, IconReady, IconTruck } from "@/components/icons";
 import { card, overline } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import { approveQuoteAction, rejectQuoteAction } from "./actions";
-import { PaymentForm } from "./PaymentForm";
+import { PaymentFlow } from "./PaymentFlow";
+
+const methodKeyMap: Record<string, string> = {
+  FIB: "methodFib",
+  FASTPAY: "methodFastpay",
+  QICARD: "methodQicard",
+  CASH_ON_DELIVERY: "methodCod",
+};
 
 const stageIcons: Record<string, ComponentType<{ size?: number; className?: string }>> = {
   SOURCING: IconBox,
@@ -26,7 +35,12 @@ export default async function CustomerRequestDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ approved?: string; rejected?: string; method?: string; error?: string }>;
+  searchParams: Promise<{
+    approved?: string;
+    rejected?: string;
+    paymentSubmitted?: string;
+    error?: string;
+  }>;
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -48,6 +62,7 @@ export default async function CustomerRequestDetailPage({
       yearRange: true,
       part: true,
       statusLogs: { orderBy: { createdAt: "asc" } },
+      payments: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!request || request.customerId !== user.id) notFound();
@@ -57,14 +72,31 @@ export default async function CustomerRequestDetailPage({
     (locale === "ku" ? request.part.nameKu : locale === "ar" ? request.part.nameAr : null) ??
     request.part.name;
 
-  const methodLabel =
-    request.paymentMethod === "CASH_ON_DELIVERY"
-      ? tp("cod")
-      : request.paymentMethod === "ONLINE_GATEWAY"
-        ? tp("gateway")
-        : request.paymentMethod === "BANK_TRANSFER"
-          ? tp("bank")
-          : "";
+  // Payment state (source of truth is the sum of CONFIRMED payments).
+  const payState = computePaymentState(request.priceUsd, request.payments);
+  const latestPayment = request.payments[0] ?? null;
+  const hasPendingPayment = payState.pendingCents > 0;
+  const latestRejected = latestPayment?.status === "REJECTED";
+  const hasBalance = payState.remainingCents > 0 && request.priceUsd !== null;
+
+  // Sourcing begins on the first confirmed payment, so a request can be moving
+  // through the shipment pipeline and still owe a balance ("dual state").
+  const inPipeline = ["SOURCING", "SHIPPED", "ARRIVED", "READY"].includes(request.status);
+  const sourcingWithBalance = inPipeline && hasBalance;
+  // A payment can be made while approved or mid-pipeline, as long as a balance
+  // remains (COMPLETED is excluded — the balance must be cleared before then).
+  const canPay = (request.status === "APPROVED" || inPipeline) && hasBalance;
+
+  // Receiving accounts for the confirmation screen (online methods only).
+  const receivingMap: Record<string, { accountName: string; accountNumberOrPhone: string }> = {};
+  if (canPay) {
+    for (const a of await getReceivingAccounts()) {
+      receivingMap[a.method] = {
+        accountName: a.accountName,
+        accountNumberOrPhone: a.accountNumberOrPhone,
+      };
+    }
+  }
 
   const banner = flags.error
     ? {
@@ -75,10 +107,10 @@ export default async function CustomerRequestDetailPage({
       ? { tone: "border-success-600 bg-success-50 text-success-700", text: t("banners.approved") }
       : flags.rejected
         ? { tone: "border-steel-400 bg-steel-100 text-steel-600", text: t("banners.rejected") }
-        : flags.method
+        : flags.paymentSubmitted
           ? {
-              tone: "border-success-600 bg-success-50 text-success-700",
-              text: t("banners.methodSaved"),
+              tone: "border-brand-600 bg-brand-50 text-brand-800",
+              text: t("banners.paymentSubmitted"),
             }
           : null;
 
@@ -103,6 +135,13 @@ export default async function CustomerRequestDetailPage({
       {banner && (
         <p className={`mb-5 rounded-xl border-s-4 px-4 py-3 text-caption ${banner.tone}`}>
           {banner.text}
+        </p>
+      )}
+
+      {/* Dual state: sourcing is underway AND a balance is still owed. */}
+      {sourcingWithBalance && (
+        <p className="mb-5 rounded-xl border-s-4 border-brand-600 bg-brand-50 px-4 py-3 text-caption text-brand-800">
+          {tp("sourcingWithBalance", { remaining: payState.remaining })}
         </p>
       )}
 
@@ -159,7 +198,7 @@ export default async function CustomerRequestDetailPage({
                 <div key={row.label} className="flex items-center justify-between gap-4">
                   <dt className="text-caption text-brand-100">{row.label}</dt>
                   <dd className="font-heading text-caption font-semibold" dir="ltr">
-                    ${row.value!.toString()}
+                    ${formatUsd(row.value)}
                   </dd>
                 </div>
               ))}
@@ -169,7 +208,7 @@ export default async function CustomerRequestDetailPage({
               {t("totalLabel")}
             </p>
             <p className="font-heading text-title font-bold" dir="ltr">
-              ${request.priceUsd.toString()}
+              ${formatUsd(request.priceUsd)}
             </p>
           </div>
 
@@ -187,7 +226,7 @@ export default async function CustomerRequestDetailPage({
           <div className="mt-5 flex gap-3">
             <form action={approveQuoteAction} className="flex-1">
               <input type="hidden" name="requestId" value={request.id} />
-              <SubmitButton className="w-full rounded-lg bg-accent-500 py-2.5 font-heading text-sm font-bold text-white transition-colors hover:bg-accent-600">
+              <SubmitButton className="w-full rounded-lg bg-accent-600 py-2.5 font-heading text-sm font-bold text-white transition-colors hover:bg-accent-700">
                 {t("approve")}
               </SubmitButton>
             </form>
@@ -201,25 +240,60 @@ export default async function CustomerRequestDetailPage({
         </section>
       )}
 
-      {request.status === "APPROVED" && (
+      {canPay && (
         <section className={`${card} mb-5 p-5`}>
-          <h2 className={overline}>{t("paymentTitle")}</h2>
-          <p className="mt-2 mb-4 text-body text-steel-600">
-            {t("total")}{" "}
-            <span className="font-heading text-heading font-bold text-steel-900" dir="ltr">
-              ${request.priceUsd?.toString()}
-            </span>
-            {request.paymentMethod && (
-              <span className="ms-2 text-caption text-success-700">
-                {t("methodSelectedNote", { method: methodLabel })}
-              </span>
+          <h2 className={overline}>{inPipeline ? tp("settleTitle") : t("paymentTitle")}</h2>
+
+          {/* Balance summary — total / paid / remaining */}
+          <div className="mt-3 grid grid-cols-3 gap-3 rounded-xl bg-steel-100/70 p-3 text-center">
+            <div>
+              <p className="text-overline uppercase text-steel-500">{tp("balanceTotal")}</p>
+              <p className="font-heading text-body font-bold text-steel-900" dir="ltr">
+                ${payState.total}
+              </p>
+            </div>
+            <div>
+              <p className="text-overline uppercase text-steel-500">{tp("balancePaid")}</p>
+              <p className="font-heading text-body font-bold text-success-700" dir="ltr">
+                ${payState.confirmed}
+              </p>
+            </div>
+            <div>
+              <p className="text-overline uppercase text-steel-500">{tp("balanceRemaining")}</p>
+              <p className="font-heading text-body font-bold text-accent-700" dir="ltr">
+                ${payState.remaining}
+              </p>
+            </div>
+          </div>
+
+          {latestRejected && !hasPendingPayment && (
+            <div className="mt-4 rounded-xl border-s-4 border-danger-600 bg-danger-50 px-4 py-3 text-caption text-danger-700">
+              <p className="font-semibold">{tp("rejectedTitle")}</p>
+              {latestPayment?.adminNote && <p className="mt-1">“{latestPayment.adminNote}”</p>}
+              <p className="mt-1">{tp("rejectedRetry")}</p>
+            </div>
+          )}
+
+          <div className="mt-4">
+            {hasPendingPayment ? (
+              <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-4">
+                <p className="font-heading text-caption font-bold text-brand-900">{tp("pendingTitle")}</p>
+                <p className="mt-1 text-caption text-brand-800">
+                  {tp("pendingBody", {
+                    amount: payState.pending,
+                    method: latestPayment ? tp(methodKeyMap[latestPayment.method]) : "",
+                  })}
+                </p>
+              </div>
+            ) : (
+              <PaymentFlow
+                requestId={request.id}
+                isFirstPayment={payState.isFirstPayment}
+                amounts={{ total: payState.total, half: payState.half, remaining: payState.remaining }}
+                receivingAccounts={receivingMap}
+              />
             )}
-          </p>
-          <PaymentForm
-            requestId={request.id}
-            currentMethod={request.paymentMethod}
-            hasProof={Boolean(request.paymentProofUrl)}
-          />
+          </div>
         </section>
       )}
 
@@ -232,9 +306,9 @@ export default async function CustomerRequestDetailPage({
         </p>
       )}
 
-      {request.status === "PAID" && request.paymentMethod && (
+      {request.status === "PAID" && (
         <p className="mb-5 rounded-xl border-s-4 border-success-600 bg-success-50 px-4 py-3 text-caption text-success-700">
-          {t("paidBanner", { method: methodLabel })}
+          {t("paidInFullBanner")}
         </p>
       )}
 
@@ -315,7 +389,7 @@ export default async function CustomerRequestDetailPage({
               </span>
               <span className="flex-1">
                 {log.note && <span className="text-steel-700">{log.note}</span>}
-                <span className="block text-steel-400">
+                <span className="block text-steel-400" dir="ltr">
                   {log.createdAt.toLocaleString("en-GB", {
                     day: "numeric",
                     month: "short",

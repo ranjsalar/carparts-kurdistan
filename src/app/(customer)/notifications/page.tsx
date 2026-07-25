@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { IconBell } from "@/components/icons";
@@ -13,11 +13,48 @@ export default async function NotificationsPage() {
   if (!user) redirect("/login");
 
   const t = await getTranslations("notifications");
+  const tt = await getTranslations("notifications.templates");
+  const locale = await getLocale();
   const notifications = await prisma.notification.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
+    include: { request: { include: { part: true, brand: true, carModel: true } } },
   });
   const hasUnread = notifications.some((n) => n.readAt === null);
+
+  type NotificationRow = (typeof notifications)[number];
+
+  // Notifications store an English title/body snapshot plus a templateKey +
+  // params, so the list re-renders in whatever language the reader is viewing
+  // now — not the language the notification was created in. The part noun is
+  // re-localized from the live request; old rows without a templateKey fall
+  // back to the stored English text.
+  function render(n: NotificationRow): { title: string; body: string } {
+    const key = n.templateKey;
+    if (!key || !tt.has(`${key}.title`)) return { title: n.title, body: n.body };
+
+    const p = (n.params ?? {}) as Record<string, unknown>;
+    const localizedPart =
+      (n.request &&
+        (locale === "ku"
+          ? n.request.part.nameKu
+          : locale === "ar"
+            ? n.request.part.nameAr
+            : null)) ||
+      n.request?.part.name ||
+      String(p.part ?? "");
+    // Every stored param must be available to the ICU message (amount,
+    // remaining, reason, total, …). Spread them all as strings, then override
+    // part/brand/model with the live-localized values.
+    const values: Record<string, string> = {};
+    for (const [k, v] of Object.entries(p)) values[k] = String(v ?? "");
+    values.part = localizedPart;
+    values.brand = n.request?.brand.name ?? String(p.brand ?? "");
+    values.model = n.request?.carModel.name ?? String(p.model ?? "");
+    let body = tt(`${key}.body`, values);
+    if (p.note) body += " " + tt("noteSuffix", { note: String(p.note) });
+    return { title: tt(`${key}.title`), body };
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -40,7 +77,9 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {notifications.map((n) => (
+          {notifications.map((n) => {
+            const { title, body } = render(n);
+            return (
             <li
               key={n.id}
               className={
@@ -50,16 +89,16 @@ export default async function NotificationsPage() {
               }
             >
               <p className="font-heading text-body font-bold text-steel-900">
-                {n.title}
+                {title}
                 {n.readAt === null && (
-                  <span className="ms-2 rounded-full bg-accent-500 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-white">
+                  <span className="ms-2 rounded-full bg-accent-600 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-white">
                     {t("unread")}
                   </span>
                 )}
               </p>
-              <p className="mt-1 text-caption text-steel-600">{n.body}</p>
+              <p className="mt-1 text-caption text-steel-600">{body}</p>
               <div className="mt-3 flex flex-wrap items-center gap-4 text-caption">
-                <span className="text-steel-400">
+                <span className="text-steel-400" dir="ltr">
                   {n.createdAt.toLocaleString("en-GB", {
                     day: "numeric",
                     month: "short",
@@ -86,7 +125,8 @@ export default async function NotificationsPage() {
                 )}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

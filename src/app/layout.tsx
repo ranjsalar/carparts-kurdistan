@@ -44,6 +44,11 @@ export default async function RootLayout({
       lang={locale}
       dir={isRtl(locale) ? "rtl" : "ltr"}
       className={`${headingFont.variable} ${bodyFont.variable} ${arabicFont.variable} h-full antialiased`}
+      // Browser extensions (e.g. the data-qb-installed attribute seen in the
+      // hydration warning) inject attributes onto <html> before React
+      // hydrates. This suppresses the mismatch warning for this element only —
+      // it does not mask genuine hydration issues elsewhere in the tree.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>

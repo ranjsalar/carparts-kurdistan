@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
+import { formatUsd } from "@/lib/format";
 import { btnPrimary, card } from "@/components/ui";
 
 export default async function MyRequestsPage({
@@ -92,7 +93,7 @@ export default async function MyRequestsPage({
                   <p className="text-caption text-accent-800">
                     {t("quotedPrice")}{" "}
                     <span className="font-heading text-body font-bold" dir="ltr">
-                      ${r.priceUsd.toString()}
+                      ${formatUsd(r.priceUsd)}
                     </span>
                   </p>
                   <Link
