@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { TIMELINE } from "./timeline";
 import type { SourceCountry } from "@/generated/prisma/enums";
 
 export type SubmitRequestInput = {
@@ -8,6 +9,7 @@ export type SubmitRequestInput = {
   partId: string;
   preferredSource?: string;
   colorCode?: string;
+  /** Required: every request must arrive with context for the sourcing team. */
   notes?: string;
   photoUrl?: string;
 };
@@ -44,6 +46,13 @@ export async function submitPartRequest(
     return { ok: false, error: "colorRequired" };
   }
 
+  // Notes are mandatory — checked server-side, not just in the form, since the
+  // client can be bypassed.
+  const notes = input.notes?.trim();
+  if (!notes) {
+    return { ok: false, error: "notesRequired" };
+  }
+
   // The customer must state a sourcing preference (China ≈ 2 months,
   // Dubai ≈ 20 days). Advisory only — admin confirms the actual source.
   if (input.preferredSource !== "CHINA" && input.preferredSource !== "DUBAI") {
@@ -60,11 +69,16 @@ export async function submitPartRequest(
       partId: part.id,
       preferredSource,
       colorCode,
-      notes: input.notes?.trim() || null,
+      notes,
       photoUrl: input.photoUrl || null,
       status: "PENDING",
       statusLogs: {
-        create: { status: "PENDING", note: "Request submitted", createdById: customerId },
+        create: {
+          status: "PENDING",
+          note: "Request submitted",
+          noteKey: TIMELINE.requestSubmitted,
+          createdById: customerId,
+        },
       },
     },
   });

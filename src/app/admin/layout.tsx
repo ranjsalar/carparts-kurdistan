@@ -56,11 +56,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                   </span>
                 )}
               </Link>
+              <Link href="/admin/customers" className="transition-colors hover:text-white">
+                {t("customers.navTitle")}
+              </Link>
               <Link href="/admin/vehicles" className="transition-colors hover:text-white">
                 {t("nav.vehicles")}
               </Link>
               <Link href="/admin/parts" className="transition-colors hover:text-white">
                 {t("nav.parts")}
+              </Link>
+              <Link href="/admin/taxonomy" className="transition-colors hover:text-white">
+                {t("taxonomyIo.navTitle")}
+              </Link>
+              <Link href="/admin/activity" className="transition-colors hover:text-white">
+                {t("activity.navTitle")}
               </Link>
               <Link href="/admin/settings" className="transition-colors hover:text-white">
                 {t("settings.navTitle")}

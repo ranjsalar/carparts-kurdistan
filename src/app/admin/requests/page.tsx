@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses, statusLabels } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
+import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
 import { IconRequest } from "@/components/icons";
 import type { RequestStatus } from "@/generated/prisma/enums";
@@ -155,7 +156,7 @@ export default async function RequestsQueuePage({
                     {r.brand.name} {r.carModel.name}
                     <span className="text-steel-400">
                       {" "}
-                      ({r.yearRange.startYear}–{r.yearRange.endYear})
+                      ({yearLabel(r.yearRange)})
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-steel-700">

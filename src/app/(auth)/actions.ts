@@ -5,16 +5,9 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import {
-  clearPending2fa,
-  createPending2fa,
-  createSession,
-  destroySession,
-  readPending2fa,
-} from "@/lib/auth";
+import { createSession, destroySession } from "@/lib/auth";
 import { issueOtp, normalizePhone, verifyOtpCode } from "@/lib/otp";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { verifyTotp } from "@/lib/totp";
 
 // ── Admin lockout + audit ────────────────────────────────────────────────────
 
@@ -32,7 +25,7 @@ async function logAdminAttempt(
   });
 }
 
-/** Records a failed admin credential/TOTP attempt; locks at the threshold. */
+/** Records a failed admin credential attempt; locks at the threshold. */
 async function recordAdminFailure(userId: string) {
   const user = await prisma.user.update({
     where: { id: userId },
@@ -84,6 +77,9 @@ export async function login(formData: FormData) {
     redirect("/login?error=locked");
   }
 
+  // A suspended customer keeps their account and history but cannot sign in.
+  if (user?.suspendedAt) redirect("/login?error=suspended");
+
   if (!user?.passwordHash || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
     if (user?.role === "ADMIN") {
       await recordAdminFailure(user.id);
@@ -93,76 +89,19 @@ export async function login(formData: FormData) {
   }
 
   if (user.role === "ADMIN") {
-    // Never issue an admin session on password alone — stage the TOTP step.
-    // totpEnabled=false routes to mandatory first-time setup instead.
+    // Admin login is email + password. Rate limiting (above) and account
+    // lockout still apply, and every attempt is audit-logged.
     await prisma.user.update({
       where: { id: user.id },
       data: { failedLogins: 0, lockedUntil: null },
     });
-    await logAdminAttempt(email, user.id, false, "password_ok_awaiting_totp");
-    await createPending2fa(user.id);
-    redirect(user.totpEnabled ? "/login/2fa" : "/login/2fa/setup");
+    await logAdminAttempt(email, user.id, true, "password_ok");
+    await createSession({ userId: user.id, role: user.role });
+    redirect("/admin");
   }
 
   await createSession({ userId: user.id, role: user.role });
   redirect("/");
-}
-
-// ── Admin 2FA (TOTP) ─────────────────────────────────────────────────────────
-
-/** Verifies the 6-digit code during login (secret already enrolled). */
-export async function verifyAdminTotp(code: string): Promise<{ ok: boolean; error?: string }> {
-  const userId = await readPending2fa();
-  if (!userId) return { ok: false, error: "totpExpiredSession" };
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.role !== "ADMIN" || !user.totpSecret || !user.totpEnabled) {
-    return { ok: false, error: "totpExpiredSession" };
-  }
-  if (isLocked(user)) {
-    await logAdminAttempt(user.email ?? "", user.id, false, "locked");
-    return { ok: false, error: "accountLocked" };
-  }
-
-  if (!verifyTotp(user.totpSecret, code)) {
-    const nowLocked = await recordAdminFailure(user.id);
-    await logAdminAttempt(user.email ?? "", user.id, false, "totp_fail");
-    return { ok: false, error: nowLocked ? "accountLocked" : "totpWrong" };
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { failedLogins: 0, lockedUntil: null },
-  });
-  await logAdminAttempt(user.email ?? "", user.id, true, "totp_ok");
-  await clearPending2fa();
-  await createSession({ userId: user.id, role: user.role });
-  redirect("/admin");
-}
-
-/** First-time enrollment: verifies a code against the freshly issued secret, then activates 2FA. */
-export async function enableAdminTotp(code: string): Promise<{ ok: boolean; error?: string }> {
-  const userId = await readPending2fa();
-  if (!userId) return { ok: false, error: "totpExpiredSession" };
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.role !== "ADMIN" || !user.totpSecret) {
-    return { ok: false, error: "totpExpiredSession" };
-  }
-
-  if (!verifyTotp(user.totpSecret, code)) {
-    await logAdminAttempt(user.email ?? "", user.id, false, "totp_setup_fail");
-    return { ok: false, error: "totpWrong" };
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { totpEnabled: true, failedLogins: 0, lockedUntil: null },
-  });
-  await logAdminAttempt(user.email ?? "", user.id, true, "totp_setup_ok");
-  await clearPending2fa();
-  await createSession({ userId: user.id, role: user.role });
-  redirect("/admin");
 }
 
 // Phone format is validated by normalizePhone() below (shared with the OTP
@@ -278,8 +217,11 @@ export async function verifyPhoneOtp(
 
   let user = await prisma.user.findUnique({ where: { phone } });
 
-  // Admin accounts must go through email + TOTP — phone OTP would otherwise
-  // be a 2FA bypass.
+  // Same suspension gate as the email path.
+  if (user?.suspendedAt) return { ok: false, error: "accountSuspended" };
+
+  // Admin accounts must go through the email + password form, which is where
+  // lockout and admin audit logging live — phone OTP would bypass both.
   if (user?.role === "ADMIN") {
     await logAdminAttempt(user.email ?? phone, user.id, false, "phone_otp_blocked");
     return { ok: false, error: "adminPhoneLogin" };

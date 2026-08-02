@@ -2,10 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { sendQuote } from "@/lib/quotes";
 import { advanceShipment } from "@/lib/shipments";
-import type { SourceCountry } from "@/generated/prisma/enums";
+import { ADMIN_ACTION, logAdminActivity } from "@/lib/admin-activity";
+import { TIMELINE } from "@/lib/timeline";
+import { statusLabels } from "@/lib/status";
+import type { RequestStatus, SourceCountry } from "@/generated/prisma/enums";
 
 // IDs are Prisma cuids; anything else (e.g. path-traversal attempts that
 // would end up interpolated into redirect URLs) bails out to the queue.
@@ -40,7 +44,15 @@ export async function sendQuoteAction(formData: FormData) {
   if (!result.ok) {
     redirect(`/admin/requests/${requestId}?error=${encodeURIComponent(result.error)}`);
   }
-  redirect(`/admin/requests/${requestId}?sent=1`);
+  await logAdminActivity({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: result.updated ? ADMIN_ACTION.quoteUpdated : ADMIN_ACTION.quoteSent,
+    summary: `${result.updated ? "Updated" : "Sent"} quote of $${field("pricePartUsd")}+ on request ${requestId}`,
+    targetType: "request",
+    targetId: requestId,
+  });
+  redirect(`/admin/requests/${requestId}?success=${result.updated ? "quoteUpdated" : "quoteSent"}`);
 }
 
 export async function advanceShipmentAction(formData: FormData) {
@@ -59,5 +71,68 @@ export async function advanceShipmentAction(formData: FormData) {
   if (!result.ok) {
     redirect(`/admin/requests/${requestId}?error=${encodeURIComponent(result.error)}`);
   }
-  redirect(`/admin/requests/${requestId}?advanced=1`);
+  await logAdminActivity({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: ADMIN_ACTION.shipmentAdvanced,
+    summary: `Advanced shipment stage on request ${requestId}`,
+    targetType: "request",
+    targetId: requestId,
+  });
+  redirect(`/admin/requests/${requestId}?success=statusAdvanced`);
+}
+
+/**
+ * Manual status override for exceptional cases (correcting a mistake).
+ *
+ * Deliberately separate from advanceShipment: that enforces the one-step-
+ * forward chain, while this can move a request anywhere. Because it bypasses
+ * the normal rules it is recorded as an explicit override — the timeline entry
+ * says so and names the reason, so a manual intervention can never be mistaken
+ * for a normal transition. A reason is required.
+ */
+export async function overrideRequestStatusAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const requestId = safeRequestId(formData.get("requestId"));
+  const nextStatus = String(formData.get("status") ?? "") as RequestStatus;
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!Object.keys(statusLabels).includes(nextStatus)) {
+    redirect(`/admin/requests/${requestId}?error=invalidStatus`);
+  }
+  if (!reason) {
+    redirect(`/admin/requests/${requestId}?error=overrideReasonRequired`);
+  }
+
+  const request = await prisma.partRequest.findUnique({ where: { id: requestId } });
+  if (!request) redirect("/admin/requests");
+  const previous = request.status;
+
+  await prisma.$transaction([
+    prisma.partRequest.update({ where: { id: requestId }, data: { status: nextStatus } }),
+    prisma.statusLog.create({
+      data: {
+        requestId,
+        status: nextStatus,
+        note: `Status manually set to ${statusLabels[nextStatus]} by an administrator. Reason: ${reason}`,
+        noteKey: TIMELINE.statusOverridden,
+        noteParams: { status: nextStatus, reason },
+        createdById: admin.id,
+      },
+    }),
+  ]);
+
+  await logAdminActivity({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: ADMIN_ACTION.statusOverridden,
+    summary: `Overrode request ${requestId}: ${previous} → ${nextStatus}. Reason: ${reason}`,
+    targetType: "request",
+    targetId: requestId,
+  });
+
+  revalidatePath(`/admin/requests/${requestId}`);
+  revalidatePath("/admin/requests");
+  revalidatePath(`/requests/${requestId}`);
+  redirect(`/admin/requests/${requestId}?success=statusOverridden`);
 }

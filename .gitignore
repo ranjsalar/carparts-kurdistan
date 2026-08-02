@@ -52,3 +52,7 @@ phase*-verify.ts
 phase*-viewport.ts
 verify-temp.ts
 mint-token.ts
+
+# one-off local operational scripts. These touch real credentials/data and must
+# never be committed — run them locally, then delete them.
+local-*.ts

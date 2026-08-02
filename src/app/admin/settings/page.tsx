@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { getReceivingAccounts } from "@/lib/payments";
+import { getReceivingAccounts, isPlaceholderAccount, methodNeedsSecondField } from "@/lib/payments";
 import { SubmitButton } from "@/components/SubmitButton";
 import { updateReceivingAccountAction } from "./actions";
 
@@ -41,8 +41,10 @@ export default async function AdminSettingsPage({
 
       <div className="space-y-4">
         {ONLINE_METHODS.map((method) => {
-          const account = byMethod.get(method as "FIB" | "FASTPAY" | "QICARD");
-          const isPlaceholder = account?.accountName?.startsWith("PLACEHOLDER") ?? true;
+          const typedMethod = method as "FIB" | "FASTPAY" | "QICARD";
+          const account = byMethod.get(typedMethod);
+          const isPlaceholder = isPlaceholderAccount(account);
+          const needsSecond = methodNeedsSecondField(typedMethod);
           return (
             <form
               key={method}
@@ -74,7 +76,7 @@ export default async function AdminSettingsPage({
                 </div>
                 <div>
                   <label className="mb-1.5 block text-caption font-medium text-steel-700">
-                    {t("accountNumber")}
+                    {needsSecond ? tp("qiCardNumber") : t("accountNumber")}
                   </label>
                   <input
                     name="accountNumberOrPhone"
@@ -84,6 +86,20 @@ export default async function AdminSettingsPage({
                     className="w-full rounded-lg border border-steel-300 bg-white px-3.5 py-2.5 text-body text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
                   />
                 </div>
+                {needsSecond && (
+                  <div>
+                    <label className="mb-1.5 block text-caption font-medium text-steel-700">
+                      {tp("registeredPhone")}
+                    </label>
+                    <input
+                      name="accountNumberOrPhone2"
+                      required
+                      dir="ltr"
+                      defaultValue={account?.accountNumberOrPhone2 ?? ""}
+                      className="w-full rounded-lg border border-steel-300 bg-white px-3.5 py-2.5 text-body text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
+                    />
+                  </div>
+                )}
               </div>
               <div className="mt-3 flex justify-end">
                 <SubmitButton className="rounded-lg bg-brand-700 px-5 py-2.5 font-heading text-sm font-semibold text-white transition-colors hover:bg-brand-800">

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { confirmPayment, rejectPayment } from "@/lib/payments";
+import { ADMIN_ACTION, logAdminActivity } from "@/lib/admin-activity";
 
 const ID_PATTERN = /^[a-z0-9]{10,40}$/i;
 
@@ -46,7 +47,15 @@ export async function confirmPaymentAction(formData: FormData) {
   if (!result.ok) {
     redirect(destination(source, requestId, `error=${encodeURIComponent(result.error)}`));
   }
-  redirect(destination(source, requestId, source === "detail" ? "paid=1" : "confirmed=1"));
+  await logAdminActivity({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: ADMIN_ACTION.paymentConfirmed,
+    summary: `Confirmed payment ${paymentId} on request ${requestId}`,
+    targetType: "request",
+    targetId: requestId,
+  });
+  redirect(destination(source, requestId, "success=paymentConfirmed"));
 }
 
 export async function rejectPaymentAction(formData: FormData) {
@@ -63,5 +72,13 @@ export async function rejectPaymentAction(formData: FormData) {
   if (!result.ok) {
     redirect(destination(source, requestId, `error=${encodeURIComponent(result.error)}`));
   }
-  redirect(destination(source, requestId, "rejected=1"));
+  await logAdminActivity({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: ADMIN_ACTION.paymentRejected,
+    summary: `Rejected payment ${paymentId} on request ${requestId}: ${note.trim()}`,
+    targetType: "request",
+    targetId: requestId,
+  });
+  redirect(destination(source, requestId, "success=paymentRejected"));
 }

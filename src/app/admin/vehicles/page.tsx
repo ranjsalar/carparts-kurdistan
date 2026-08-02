@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { yearLabel } from "@/lib/years";
 import { addBrand, addModel, addYearRange, deleteBrand, deleteModel, deleteYearRange } from "./actions";
 
 export default async function VehiclesPage({
@@ -94,7 +95,7 @@ export default async function VehiclesPage({
                           key={yr.id}
                           className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-overline text-steel-700 ring-1 ring-steel-200"
                         >
-                          {yr.startYear}–{yr.endYear}
+                          {yearLabel(yr)}
                           <form action={deleteYearRange}>
                             <input type="hidden" name="id" value={yr.id} />
                             <button
@@ -117,7 +118,6 @@ export default async function VehiclesPage({
                         />
                         <input
                           name="endYear"
-                          required
                           type="number"
                           placeholder={t("yearTo")}
                           className="w-20 rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-900"
@@ -125,6 +125,7 @@ export default async function VehiclesPage({
                         <button className="rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-600 hover:bg-steel-100">
                           {t("addYears")}
                         </button>
+                        <span className="text-overline text-steel-400">{t("addYearsHint")}</span>
                       </form>
                     </div>
                   </li>

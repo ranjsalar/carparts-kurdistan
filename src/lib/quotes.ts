@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { TIMELINE } from "./timeline";
 import type { SourceCountry } from "@/generated/prisma/enums";
 
 // Itemized quote: part price is required; the other components are optional
@@ -14,7 +15,9 @@ export type SendQuoteInput = {
   quoteNotes?: string;
 };
 
-export type SendQuoteResult = { ok: true } | { ok: false; error: string };
+/** `updated` distinguishes a re-quote from a first quote, so the caller can
+ *  show the right confirmation message. */
+export type SendQuoteResult = { ok: true; updated: boolean } | { ok: false; error: string };
 
 const PRICE_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
 
@@ -93,6 +96,8 @@ export async function sendQuote(
         requestId,
         status: "QUOTED",
         note: `${isUpdate ? "Quote updated" : "Quote sent"}: $${total} (sourced from ${sourceLabel})`,
+        noteKey: isUpdate ? TIMELINE.quoteUpdated : TIMELINE.quoteSent,
+        noteParams: { total, source: input.source },
         createdById: adminId,
       },
     }),
@@ -119,5 +124,5 @@ export async function sendQuote(
   // The Notification row above is the source of truth; the WhatsApp send
   // should be triggered right here with the same title/body.
 
-  return { ok: true };
+  return { ok: true, updated: isUpdate };
 }

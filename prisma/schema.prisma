@@ -24,21 +24,21 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Admin 2FA (TOTP). Admin sessions are only ever issued after a verified
-  // TOTP code; totpEnabled=false forces the setup flow on next login.
-  totpSecret  String?
-  totpEnabled Boolean @default(false)
-
-  // Admin account lockout: counts consecutive failed login/TOTP attempts;
+  // Admin account lockout: counts consecutive failed login attempts;
   // locked accounts auto-unlock when lockedUntil passes.
   failedLogins Int       @default(0)
   lockedUntil  DateTime?
 
-  requests          PartRequest[] @relation("CustomerRequests")
-  quotesSent        PartRequest[] @relation("QuotedBy")
+  // Set by an admin to block sign-in without deleting the account or its
+  // order history. Null = active.
+  suspendedAt DateTime?
+
+  requests          PartRequest[]      @relation("CustomerRequests")
+  quotesSent        PartRequest[]      @relation("QuotedBy")
   statusUpdates     StatusLog[]
   notifications     Notification[]
-  paymentsConfirmed Payment[]     @relation("PaymentsConfirmed")
+  paymentsConfirmed Payment[]          @relation("PaymentsConfirmed")
+  adminActivity     AdminActivityLog[] @relation("AdminActivity")
 }
 
 // One-time codes for phone login. Codes are 6 digits, short-lived, single-use.
@@ -270,6 +270,11 @@ model PaymentReceivingAccount {
   method               PaymentMethod @id
   accountName          String
   accountNumberOrPhone String
+  // Optional second identifier for methods that need two values. Qi Card is
+  // identified by BOTH a card/account number and the registered phone, and
+  // customers need both to send money — so they are stored and displayed as
+  // two separate labelled fields rather than one concatenated string.
+  accountNumberOrPhone2 String?
   updatedAt            DateTime      @updatedAt
 }
 
@@ -278,7 +283,13 @@ model StatusLog {
   requestId String
   request   PartRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
   status    RequestStatus
-  note      String?
+  // `note` holds an English snapshot. System-generated entries also set
+  // noteKey + noteParams so the timeline can be re-rendered in the reader's
+  // language (same pattern as Notification.templateKey). Free text an admin
+  // typed has no noteKey and is shown exactly as written, in any language.
+  note        String?
+  noteKey     String?
+  noteParams  Json?
   createdById String?
   createdBy   User?       @relation(fields: [createdById], references: [id])
   createdAt DateTime      @default(now())
@@ -288,8 +299,8 @@ model StatusLog {
 
 // ─── Admin audit ─────────────────────────────────────────────────────────────
 
-// Every admin login attempt (password fail, lockout hit, TOTP fail/success)
-// is recorded here for basic audit visibility on the dashboard.
+// Every admin login attempt (success, password fail, lockout hit) is recorded
+// here for basic audit visibility on the dashboard.
 model AdminLoginLog {
   id        String   @id @default(cuid())
   email     String
@@ -298,6 +309,28 @@ model AdminLoginLog {
   success   Boolean
   note      String?
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Meaningful admin actions across the system (quotes, payments, status
+// overrides, customer account changes, taxonomy imports). Sits alongside
+// AdminLoginLog, which stays focused on authentication attempts; the admin
+// activity screen shows both. Entries are immutable and admin-facing, so the
+// summary is stored in English rather than translated.
+model AdminActivityLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AdminActivity", fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String // snapshot so the record survives account deletion
+  action     String // QUOTE_SENT, PAYMENT_CONFIRMED, STATUS_OVERRIDDEN, …
+  targetType String? // "request" | "customer" | "taxonomy"
+  targetId   String?
+  // Deliberately English, unlike customer-facing notifications and request
+  // timelines: an audit trail is a technical record and must read identically
+  // for every admin regardless of their interface language.
+  summary    String
+  createdAt  DateTime @default(now())
 
   @@index([createdAt])
 }

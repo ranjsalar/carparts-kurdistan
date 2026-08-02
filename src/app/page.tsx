@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { yearLabel } from "@/lib/years";
 import { getSessionUser } from "@/lib/auth";
 import { BrandGrid } from "@/components/BrandGrid";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -86,7 +87,7 @@ export default async function Home() {
     models: b.models.map((m) => ({
       id: m.id,
       name: m.name,
-      yearRanges: m.yearRanges.map((y) => ({ id: y.id, label: `${y.startYear}–${y.endYear}` })),
+      yearRanges: m.yearRanges.map((y) => ({ id: y.id, label: yearLabel(y) })),
     })),
   }));
 

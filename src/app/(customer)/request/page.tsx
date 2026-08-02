@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { yearLabel } from "@/lib/years";
 import { IconBell, IconDrop, IconQuote } from "@/components/icons";
 import {
   RequestForm,
@@ -56,7 +57,7 @@ export default async function RequestPage({
       name: m.name,
       yearRanges: m.yearRanges.map((y) => ({
         id: y.id,
-        label: `${y.startYear}–${y.endYear}`,
+        label: yearLabel(y),
       })),
     })),
   }));

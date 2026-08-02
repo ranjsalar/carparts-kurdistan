@@ -7,11 +7,14 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { computePaymentState, getReceivingAccounts } from "@/lib/payments";
+import { yearLabel } from "@/lib/years";
+import { computePaymentState, getReceivingAccounts, isPlaceholderAccount } from "@/lib/payments";
+import { renderTimelineNote, type TimelineContext } from "@/lib/timeline";
 import { SHIPMENT_STAGES } from "@/lib/shipments";
 import { IconBox, IconFinish, IconFlag, IconReady, IconTruck } from "@/components/icons";
 import { card, overline } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
+import { SuccessDialog } from "@/components/SuccessDialog";
 import { approveQuoteAction, rejectQuoteAction } from "./actions";
 import { PaymentFlow } from "./PaymentFlow";
 
@@ -35,12 +38,7 @@ export default async function CustomerRequestDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{
-    approved?: string;
-    rejected?: string;
-    paymentSubmitted?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -52,6 +50,7 @@ export default async function CustomerRequestDetailPage({
   const tp = await getTranslations("payment");
   const tt = await getTranslations("tracking");
   const te = await getTranslations("errors");
+  const tl = await getTranslations("timeline");
   const locale = await getLocale();
 
   const request = await prisma.partRequest.findUnique({
@@ -72,6 +71,21 @@ export default async function CustomerRequestDetailPage({
     (locale === "ku" ? request.part.nameKu : locale === "ar" ? request.part.nameAr : null) ??
     request.part.name;
 
+  // Timeline entries carry a noteKey so system messages render in the reader's
+  // language; enum params are resolved to localized labels here.
+  const noteCtx: TimelineContext = {
+    t: (key, values) => tl(key, values),
+    hasKey: (key) => tl.has(key),
+    label: (kind, value) =>
+      kind === "source"
+        ? value === "CHINA"
+          ? t("sourceChina")
+          : t("sourceDubai")
+        : kind === "method"
+          ? tp(methodKeyMap[value] ?? value)
+          : ts(value),
+  };
+
   // Payment state (source of truth is the sum of CONFIRMED payments).
   const payState = computePaymentState(request.priceUsd, request.payments);
   const latestPayment = request.payments[0] ?? null;
@@ -88,12 +102,22 @@ export default async function CustomerRequestDetailPage({
   const canPay = (request.status === "APPROVED" || inPipeline) && hasBalance;
 
   // Receiving accounts for the confirmation screen (online methods only).
-  const receivingMap: Record<string, { accountName: string; accountNumberOrPhone: string }> = {};
+  const receivingMap: Record<
+    string,
+    {
+      accountName: string;
+      accountNumberOrPhone: string;
+      accountNumberOrPhone2: string | null;
+      isPlaceholder: boolean;
+    }
+  > = {};
   if (canPay) {
     for (const a of await getReceivingAccounts()) {
       receivingMap[a.method] = {
         accountName: a.accountName,
         accountNumberOrPhone: a.accountNumberOrPhone,
+        accountNumberOrPhone2: a.accountNumberOrPhone2,
+        isPlaceholder: isPlaceholderAccount(a),
       };
     }
   }
@@ -103,19 +127,11 @@ export default async function CustomerRequestDetailPage({
         tone: "border-danger-600 bg-danger-50 text-danger-700",
         text: te.has(flags.error) ? te(flags.error) : te("generic"),
       }
-    : flags.approved
-      ? { tone: "border-success-600 bg-success-50 text-success-700", text: t("banners.approved") }
-      : flags.rejected
-        ? { tone: "border-steel-400 bg-steel-100 text-steel-600", text: t("banners.rejected") }
-        : flags.paymentSubmitted
-          ? {
-              tone: "border-brand-600 bg-brand-50 text-brand-800",
-              text: t("banners.paymentSubmitted"),
-            }
-          : null;
+    : null;
 
   return (
     <div className="mx-auto max-w-2xl">
+      {flags.success && <SuccessDialog messageKey={flags.success} redirectTo="/requests" />}
       <Link
         href="/requests"
         className="font-heading text-caption font-semibold text-brand-700 hover:underline"
@@ -147,8 +163,7 @@ export default async function CustomerRequestDetailPage({
 
       <section className={`${card} mb-5 p-5`}>
         <p className="text-body text-steel-700">
-          {request.brand.name} {request.carModel.name} ({request.yearRange.startYear}–
-          {request.yearRange.endYear})
+          {request.brand.name} {request.carModel.name} ({yearLabel(request.yearRange)})
           {request.colorCode && (
             <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
               {request.colorCode}
@@ -388,7 +403,9 @@ export default async function CustomerRequestDetailPage({
                 {ts(log.status)}
               </span>
               <span className="flex-1">
-                {log.note && <span className="text-steel-700">{log.note}</span>}
+                {renderTimelineNote(log, noteCtx) && (
+                  <span className="text-steel-700">{renderTimelineNote(log, noteCtx)}</span>
+                )}
                 <span className="block text-steel-400" dir="ltr">
                   {log.createdAt.toLocaleString("en-GB", {
                     day: "numeric",

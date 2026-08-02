@@ -6,7 +6,7 @@ import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/app/(auth)/actions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Logo } from "@/components/Logo";
-import { IconBell } from "@/components/icons";
+import { NotificationBell } from "@/components/NotificationBell";
 import { btnGhost } from "@/components/ui";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
@@ -34,18 +34,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
             </nav>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/notifications"
-              aria-label={t("nav.notifications")}
-              className="relative rounded-lg p-2 text-steel-500 transition-colors hover:bg-steel-100 hover:text-steel-900"
-            >
-              <IconBell size={20} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-600 px-1 font-heading text-[10px] font-bold text-white">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
+            <NotificationBell initialCount={unreadCount} label={t("nav.notifications")} />
             <span className="hidden text-caption text-steel-500 sm:inline">{user.name}</span>
             <form action={logout}>
               <button className={btnGhost}>{t("common.logout")}</button>

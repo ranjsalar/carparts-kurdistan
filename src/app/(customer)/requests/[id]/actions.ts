@@ -26,7 +26,7 @@ async function finish(requestId: string, result: { ok: boolean; error?: string }
   if (!result.ok) {
     redirect(`/requests/${requestId}?error=${encodeURIComponent(result.error ?? "Failed")}`);
   }
-  redirect(`/requests/${requestId}?${flag}=1`);
+  redirect(`/requests/${requestId}?success=${flag}`);
 }
 
 export async function approveQuoteAction(formData: FormData) {
@@ -34,7 +34,7 @@ export async function approveQuoteAction(formData: FormData) {
   if (!user) redirect("/login");
   const requestId = requestIdFrom(formData);
   const result = await decideQuote(user.id, requestId, "approve");
-  await finish(requestId, result, "approved");
+  await finish(requestId, result, "quoteApproved");
 }
 
 export async function rejectQuoteAction(formData: FormData) {
@@ -42,7 +42,7 @@ export async function rejectQuoteAction(formData: FormData) {
   if (!user) redirect("/login");
   const requestId = requestIdFrom(formData);
   const result = await decideQuote(user.id, requestId, "reject");
-  await finish(requestId, result, "rejected");
+  await finish(requestId, result, "quoteRejected");
 }
 
 export async function submitPaymentAction(formData: FormData) {

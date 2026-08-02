@@ -6,7 +6,13 @@ import { submitPaymentAction } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
 
 type Method = "FIB" | "FASTPAY" | "QICARD" | "CASH_ON_DELIVERY";
-type ReceivingAccount = { accountName: string; accountNumberOrPhone: string };
+type ReceivingAccount = {
+  accountName: string;
+  accountNumberOrPhone: string;
+  /** Qi Card only: the registered phone, shown as its own labelled row. */
+  accountNumberOrPhone2?: string | null;
+  isPlaceholder: boolean;
+};
 
 const ONLINE: Method[] = ["FIB", "FASTPAY", "QICARD"];
 const METHOD_KEY: Record<Method, string> = {
@@ -208,7 +214,7 @@ export function PaymentFlow({
   // ── Step 4: confirmation + submit ──────────────────────────────────────────
   if (step === "confirm" && method) {
     const account = receivingAccounts[method];
-    const isPlaceholder = account?.accountName?.startsWith("PLACEHOLDER");
+    const isPlaceholder = account?.isPlaceholder ?? true;
     return (
       <form action={submitPaymentAction} className="space-y-4">
         <input type="hidden" name="requestId" value={requestId} />
@@ -231,11 +237,21 @@ export function PaymentFlow({
                   <dd className="font-semibold text-steel-900">{account?.accountName ?? "—"}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-steel-500">{t("accountNumber")}</dt>
+                  <dt className="text-steel-500">
+                    {method === "QICARD" ? t("qiCardNumber") : t("accountNumber")}
+                  </dt>
                   <dd className="font-semibold text-steel-900" dir="ltr">
                     {account?.accountNumberOrPhone ?? "—"}
                   </dd>
                 </div>
+                {account?.accountNumberOrPhone2 && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-steel-500">{t("registeredPhone")}</dt>
+                    <dd className="font-semibold text-steel-900" dir="ltr">
+                      {account.accountNumberOrPhone2}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between gap-4 border-t border-brand-200 pt-1.5">
                   <dt className="text-steel-500">{t("amountToSend")}</dt>
                   <dd className="font-heading font-bold text-steel-900" dir="ltr">

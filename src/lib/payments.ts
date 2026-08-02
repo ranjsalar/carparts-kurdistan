@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { TIMELINE } from "./timeline";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 
@@ -57,6 +58,7 @@ export async function decideQuote(
           requestId,
           status: "APPROVED",
           note: "Customer approved the quote",
+          noteKey: TIMELINE.quoteApproved,
           createdById: customerId,
         },
       }),
@@ -69,6 +71,7 @@ export async function decideQuote(
           requestId,
           status: "REJECTED",
           note: "Customer rejected the quote",
+          noteKey: TIMELINE.quoteRejected,
           createdById: customerId,
         },
       }),
@@ -220,6 +223,8 @@ export async function submitPayment(
           requestId,
           status: request.status,
           note: `Payment submitted: $${amountStr} via ${method} (pending confirmation)`,
+          noteKey: TIMELINE.paymentSubmitted,
+          noteParams: { amount: amountStr, method },
           createdById: customerId,
         },
       });
@@ -290,6 +295,8 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               requestId: request.id,
               status: "SOURCING",
               note: `Payment confirmed — paid in full ($${before.total}). Sourcing has begun.`,
+              noteKey: TIMELINE.paymentPaidInFull,
+              noteParams: { total: before.total },
               createdById: adminId,
             },
           });
@@ -314,6 +321,8 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               requestId: request.id,
               status: "SOURCING",
               note: `First payment confirmed ($${amountStr}) — sourcing has begun. $${remainingStr} remaining.`,
+              noteKey: TIMELINE.paymentFirstConfirmed,
+              noteParams: { amount: amountStr, remaining: remainingStr },
               createdById: adminId,
             },
           });
@@ -347,6 +356,8 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             requestId: request.id,
             status: request.status,
             note: `Remaining balance settled ($${amountStr}).`,
+            noteKey: TIMELINE.paymentSettled,
+            noteParams: { amount: amountStr },
             createdById: adminId,
           },
         });
@@ -374,6 +385,8 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             requestId: request.id,
             status: request.status,
             note: `Payment confirmed ($${amountStr}) — $${remainingStr} remaining.`,
+            noteKey: TIMELINE.paymentPartialConfirmed,
+            noteParams: { amount: amountStr, remaining: remainingStr },
             createdById: adminId,
           },
         });
@@ -440,6 +453,8 @@ export async function rejectPayment(
           requestId: request.id,
           status: "APPROVED",
           note: `Payment rejected ($${amountStr}): ${reason}`,
+          noteKey: TIMELINE.paymentRejected,
+          noteParams: { amount: amountStr, reason },
           createdById: adminId,
         },
       });
@@ -474,20 +489,59 @@ export async function getReceivingAccounts() {
   return prisma.paymentReceivingAccount.findMany();
 }
 
+/**
+ * Qi Card is identified by a card number AND the registered phone; customers
+ * need both. Other methods use a single identifier.
+ */
+export function methodNeedsSecondField(method: PaymentMethod): boolean {
+  return method === "QICARD";
+}
+
+/**
+ * True when an account still holds seeded placeholder text rather than real
+ * business details. Checked on both the admin settings page (badge) and the
+ * customer payment screen (warning), so it lives here rather than being
+ * re-implemented per page. A missing row counts as a placeholder.
+ */
+export function isPlaceholderAccount(
+  account?: {
+    accountName: string;
+    accountNumberOrPhone: string;
+    accountNumberOrPhone2?: string | null;
+  } | null,
+): boolean {
+  if (!account) return true;
+  return [account.accountName, account.accountNumberOrPhone, account.accountNumberOrPhone2].some(
+    (v) => typeof v === "string" && v.trim().toUpperCase().startsWith("PLACEHOLDER"),
+  );
+}
+
 export async function updateReceivingAccount(
   method: PaymentMethod,
   accountName: string,
   accountNumberOrPhone: string,
+  accountNumberOrPhone2?: string,
 ): Promise<ActionResult> {
   if (!ONLINE_METHODS.includes(method)) return { ok: false, error: "invalidMethod" };
   const name = accountName.trim();
   const num = accountNumberOrPhone.trim();
   if (!name || !num) return { ok: false, error: "accountFieldsRequired" };
 
+  // The second field is only meaningful for methods that use it; blank clears it.
+  const num2 = methodNeedsSecondField(method) ? accountNumberOrPhone2?.trim() || null : null;
+  if (methodNeedsSecondField(method) && !num2) {
+    return { ok: false, error: "accountFieldsRequired" };
+  }
+
   await prisma.paymentReceivingAccount.upsert({
     where: { method },
-    update: { accountName: name, accountNumberOrPhone: num },
-    create: { method, accountName: name, accountNumberOrPhone: num },
+    update: { accountName: name, accountNumberOrPhone: num, accountNumberOrPhone2: num2 },
+    create: {
+      method,
+      accountName: name,
+      accountNumberOrPhone: num,
+      accountNumberOrPhone2: num2,
+    },
   });
   return { ok: true };
 }

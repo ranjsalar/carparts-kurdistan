@@ -6,12 +6,14 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
+import { yearLabel } from "@/lib/years";
 import { btnPrimary, card } from "@/components/ui";
+import { SuccessDialog } from "@/components/SuccessDialog";
 
 export default async function MyRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ submitted?: string }>;
+  searchParams: Promise<{ success?: string }>;
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -19,7 +21,7 @@ export default async function MyRequestsPage({
   const t = await getTranslations("myRequests");
   const ts = await getTranslations("statuses");
   const locale = await getLocale();
-  const { submitted } = await searchParams;
+  const { success } = await searchParams;
   const requests = await prisma.partRequest.findMany({
     where: { customerId: user.id },
     orderBy: { createdAt: "desc" },
@@ -44,14 +46,7 @@ export default async function MyRequestsPage({
         </Link>
       </div>
 
-      {submitted && (
-        <div className="mb-6 rounded-xl border-s-4 border-success-600 bg-success-50 px-4 py-3">
-          <p className="font-heading text-body font-bold text-success-700">
-            {t("submittedTitle")}
-          </p>
-          <p className="mt-0.5 text-caption text-success-700">{t("submittedBody")}</p>
-        </div>
-      )}
+      {success && <SuccessDialog messageKey={success} redirectTo="/requests" />}
 
       {requests.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-steel-300 bg-white px-4 py-14 text-center text-body text-steel-500">
@@ -73,7 +68,7 @@ export default async function MyRequestsPage({
                     {localized(r.part)}
                   </Link>
                   <p className="mt-1 text-caption text-steel-600">
-                    {r.brand.name} {r.carModel.name} ({r.yearRange.startYear}–{r.yearRange.endYear})
+                    {r.brand.name} {r.carModel.name} ({yearLabel(r.yearRange)})
                     {r.colorCode && (
                       <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
                         {t("colorBadge", { code: r.colorCode })}

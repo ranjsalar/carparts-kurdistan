@@ -41,5 +41,5 @@ export async function createRequest(formData: FormData): Promise<CreateRequestRe
   });
 
   if (!result.ok) return { ok: false, error: result.error };
-  redirect("/requests?submitted=1");
+  redirect("/requests?success=requestSubmitted");
 }

@@ -7,7 +7,10 @@
     "logout": "Log out",
     "login": "Log in",
     "signup": "Sign up",
-    "optional": "optional"
+    "optional": "optional",
+    "required": "required",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "home": {
     "heroTitle": "Any part. Any car. Delivered.",
@@ -86,6 +89,7 @@
     "vehicleMismatch": "The selected vehicle details don't match — please re-select your car.",
     "partNotFound": "Selected part not found.",
     "colorRequired": "This part is painted — please enter your car's color code.",
+    "notesRequired": "Please add a note describing what you need before submitting.",
     "submitRateLimited": "Too many requests submitted — please try again in an hour.",
     "requestNotFound": "Request not found.",
     "noOpenQuote": "This request has no open quote to decide on.",
@@ -102,10 +106,8 @@
     "badYears": "Enter a valid year range (start ≤ end).",
     "badRange": "Enter a valid price range (min ≤ max).",
     "invalidBreakdown": "Enter valid amounts — part price is required, other lines can be 0.",
-    "totpWrong": "Wrong code — check your authenticator app and try again.",
-    "totpExpiredSession": "This login step expired — please log in again.",
     "accountLocked": "Too many failed attempts — this account is locked for 15 minutes.",
-    "adminPhoneLogin": "Admin accounts must log in with email and two-factor authentication.",
+    "adminPhoneLogin": "Admin accounts must log in with their email and password.",
     "notPayable": "This request can't be paid right now.",
     "paymentPending": "You already have a payment awaiting confirmation on this request.",
     "alreadyPaid": "This request is already fully paid.",
@@ -116,7 +118,17 @@
     "paymentNotPending": "This payment has already been handled.",
     "rejectReasonRequired": "Enter a reason for rejecting this payment.",
     "accountFieldsRequired": "Enter both the account name and number.",
-    "settleBeforeComplete": "Clear the outstanding balance before completing the order."
+    "settleBeforeComplete": "Clear the outstanding balance before completing the order.",
+    "suspended": "This account has been suspended. Please contact us.",
+    "accountSuspended": "This account has been suspended. Please contact us.",
+    "nameRequired": "Enter a name.",
+    "customerHasActiveRequests": "This customer still has active orders — suspend the account instead, or finish those orders first.",
+    "invalidStatus": "Pick a valid status.",
+    "overrideReasonRequired": "Enter a reason for the manual override.",
+    "importNoFile": "Choose a CSV or JSON file to import.",
+    "importTooLarge": "That file is too large (max 2 MB).",
+    "importUnreadable": "That file could not be read — export a fresh copy and edit that.",
+    "importEmpty": "That file has no rows."
   },
   "auth": {
     "login": {
@@ -133,19 +145,6 @@
       "phone": "Phone",
       "submit": "Sign up",
       "haveAccount": "Already have an account?"
-    },
-    "twofa": {
-      "title": "Two-factor authentication",
-      "intro": "Enter the 6-digit code from your authenticator app.",
-      "codeLabel": "Code",
-      "verify": "Verify & log in",
-      "setupTitle": "Set up two-factor authentication",
-      "setupIntro": "Admin accounts require an authenticator app (Google Authenticator, Authy, Microsoft Authenticator…). Add the key below to your app, then confirm with the current code.",
-      "secretLabel": "Setup key",
-      "uriLabel": "Setup link (otpauth)",
-      "setupHelp": "In your authenticator app choose “Enter a setup key”, paste the key, and keep the default time-based settings.",
-      "activate": "Activate & log in",
-      "backToLogin": "Back to login"
     },
     "phone": {
       "title": "Log in with phone",
@@ -169,7 +168,8 @@
       "signupInvalid": "Please check your details — password must be at least 8 characters.",
       "rate": "Too many attempts — please wait a few minutes and try again.",
       "locked": "Too many failed attempts — this account is locked for 15 minutes.",
-      "generic": "Something went wrong. Try again."
+      "generic": "Something went wrong. Try again.",
+      "suspended": "This account has been suspended. Please contact us to restore access."
     }
   },
   "requestForm": {
@@ -190,11 +190,11 @@
     "sourceDubaiHint": "Delivery in about 20 days",
     "brand": "Brand",
     "model": "Model",
-    "years": "Years",
-    "yearsHint": "Pick the range that includes your car's year — parts usually fit the whole generation.",
+    "years": "Year",
+    "yearsHint": "Pick your car's model year.",
     "selectBrand": "Select brand…",
     "selectModel": "Select model…",
-    "selectYears": "Select year range…",
+    "selectYears": "Select year…",
     "category": "Category",
     "type": "Type",
     "part": "Part",
@@ -207,7 +207,8 @@
     "summary": "Your request",
     "colorSummary": "color {code}",
     "notes": "Notes",
-    "notesPlaceholder": "Anything that helps us find the exact part — VIN, trim, original or aftermarket preference…",
+    "notesPlaceholder": "e.g. VIN, trim level, original or aftermarket preference, or where the damage is…",
+    "notesHint": "Tell us anything that helps us find the exact part — this speeds up your quote.",
     "photo": "Photo",
     "photoMax": "(optional, max 5 MB)",
     "photoHint": "A photo of the part or your VIN plate helps us quote faster.",
@@ -293,6 +294,8 @@
     "receivingAccount": "Send to",
     "accountName": "Account name",
     "accountNumber": "Account number / phone",
+    "qiCardNumber": "Account number",
+    "registeredPhone": "Registered phone",
     "sentButton": "I've sent the payment",
     "codConfirmTitle": "Confirm cash on delivery",
     "codConfirmBody": "You'll pay the remaining ${amount} in cash when the part is delivered. Our team will confirm this arrangement.",
@@ -312,6 +315,83 @@
     "title": "Order tracking",
     "current": "current",
     "paidHint": "Your order is confirmed — tracking starts as soon as we order the part."
+  },
+  "timeline": {
+    "requestSubmitted": "Request submitted",
+    "quoteSent": "Quote sent: ${total} (sourced from {source})",
+    "quoteUpdated": "Quote updated: ${total} (sourced from {source})",
+    "quoteApproved": "Customer approved the quote",
+    "quoteRejected": "Customer rejected the quote",
+    "paymentSubmitted": "Payment submitted: ${amount} via {method} — awaiting confirmation",
+    "paymentPaidInFull": "Payment confirmed — paid in full (${total}). Sourcing has begun.",
+    "paymentFirstConfirmed": "First payment confirmed (${amount}) — sourcing has begun. ${remaining} remaining.",
+    "paymentSettled": "Remaining balance settled (${amount}).",
+    "paymentPartialConfirmed": "Payment confirmed (${amount}) — ${remaining} remaining.",
+    "paymentRejected": "Payment rejected (${amount}): {reason}",
+    "statusOverridden": "Status manually set to {status} by an administrator. Reason: {reason}"
+  },
+  "success": {
+    "ok": "OK",
+    "quoteSent": {
+      "title": "Quote sent",
+      "body": "The customer has been notified and can now review and approve it."
+    },
+    "quoteUpdated": {
+      "title": "Quote updated",
+      "body": "The customer has been notified of the new price."
+    },
+    "paymentConfirmed": {
+      "title": "Payment confirmed",
+      "body": "The payment was recorded and the customer has been notified."
+    },
+    "paymentRejected": {
+      "title": "Payment rejected",
+      "body": "The customer has been told why and can submit a new payment."
+    },
+    "statusAdvanced": {
+      "title": "Status updated",
+      "body": "The order moved to its next stage and the customer was notified."
+    },
+    "statusOverridden": {
+      "title": "Status overridden",
+      "body": "The change was applied and recorded in the request timeline as a manual override."
+    },
+    "customerUpdated": {
+      "title": "Customer updated",
+      "body": "The account details were saved."
+    },
+    "customerSuspended": {
+      "title": "Account suspended",
+      "body": "This customer can no longer sign in. You can restore access at any time."
+    },
+    "customerRestored": {
+      "title": "Account restored",
+      "body": "This customer can sign in again."
+    },
+    "customerDeleted": {
+      "title": "Customer deleted",
+      "body": "The account and its history were permanently removed."
+    },
+    "taxonomyImported": {
+      "title": "Import complete",
+      "body": "The taxonomy was updated from your file."
+    },
+    "requestSubmitted": {
+      "title": "Request submitted",
+      "body": "Our team will check availability and send you a price to approve. We'll notify you as soon as it's ready."
+    },
+    "quoteApproved": {
+      "title": "Quote approved",
+      "body": "Next, choose how you'd like to pay. Nothing is charged until you send the payment."
+    },
+    "quoteRejected": {
+      "title": "Quote rejected",
+      "body": "This request is now closed. You can submit a new request whenever you like."
+    },
+    "paymentSubmitted": {
+      "title": "Payment submitted",
+      "body": "Our team will verify it and confirm shortly. You'll get a notification once it's confirmed."
+    }
   },
   "statuses": {
     "PENDING": "Pending quote",
@@ -436,24 +516,14 @@
       "requestsToday": "Requests today",
       "pendingQuotes": "Pending quotes",
       "revenueMonth": "Revenue this month",
+      "revenueMonthHint": "Received — fully paid orders",
+      "pipelineValue": "Pipeline value",
+      "pipelineValueHint": "Expected — quoted, not yet fully paid",
       "customers": "Customers",
       "catalogParts": "Parts in catalog",
       "byStage": "Orders by stage",
       "recentLogins": "Recent admin logins",
       "noLogins": "No login attempts recorded yet.",
-      "loginOk": "Success",
-      "loginFail": "Failed",
-      "loginPending": "In progress",
-      "auditNotes": {
-        "password_fail": "Wrong password",
-        "password_ok_awaiting_totp": "Password OK — awaiting 2FA",
-        "totp_fail": "Wrong 2FA code",
-        "totp_ok": "2FA verified",
-        "totp_setup_fail": "2FA setup failed",
-        "totp_setup_ok": "2FA setup complete",
-        "locked": "Account locked",
-        "phone_otp_blocked": "Phone login blocked for admin"
-      },
       "queueLink": "Open the requests queue",
       "queueHint": "to review and quote incoming part requests."
     },
@@ -480,9 +550,9 @@
       "addBrand": "Add brand",
       "modelPlaceholder": "New model (e.g. Land Cruiser)",
       "addModel": "Add model",
-      "yearFrom": "From",
-      "yearTo": "To",
-      "addYears": "+ years",
+      "yearFrom": "Year",
+      "yearTo": "To (optional)",
+      "addYears": "+ add",
       "delete": "Delete",
       "modelsCount": "{count} models",
       "noModels": "No models yet.",
@@ -505,7 +575,8 @@
       "priceRange": "Typical price $",
       "priceMin": "Min",
       "priceMax": "Max",
-      "priceRangeSet": "Save"
+      "priceRangeSet": "Save",
+      "addYearsHint": "Adds each year individually"
     },
     "detail": {
       "backToQueue": "Back to queue",
@@ -548,6 +619,82 @@
       "confirmHint": "Only confirm once the money is actually in hand/account.",
       "advanceHint": "Statuses advance one step at a time and can't be undone, so update only when the stage is really reached.",
       "notePlaceholder": "e.g. cleared customs, 3–5 days to warehouse"
+    },
+    "customers": {
+      "navTitle": "Customers",
+      "title": "Customers",
+      "subtitle": "View order history, edit details, suspend access or remove an account.",
+      "searchPlaceholder": "Search by name, email or phone...",
+      "search": "Search",
+      "empty": "No customers yet.",
+      "name": "Name",
+      "contact": "Contact",
+      "email": "Email",
+      "phone": "Phone",
+      "requests": "Requests",
+      "activeRequests": "Active requests",
+      "joined": "Joined",
+      "status": "Status",
+      "open": "Open",
+      "active": "Active",
+      "suspended": "Suspended",
+      "backToList": "Customers",
+      "orderHistory": "Order history",
+      "noRequests": "This customer has not made any requests.",
+      "editDetails": "Edit details",
+      "summary": "Summary",
+      "lifetimePaid": "Lifetime paid",
+      "paidShort": "paid",
+      "accountActions": "Account actions",
+      "suspend": "Suspend access",
+      "restore": "Restore access",
+      "suspendTitle": "Suspend this account?",
+      "suspendBody": "They will not be able to sign in. Their requests, payments and history are kept exactly as they are.",
+      "restoreTitle": "Restore access?",
+      "restoreBody": "This customer will be able to sign in again.",
+      "suspendHint": "Blocks sign-in. Nothing is deleted and it can be undone at any time.",
+      "delete": "Delete account",
+      "deleteTitle": "Permanently delete this customer?",
+      "deleteBody": "This removes the account and all {count} of its past requests, payments and notifications. This cannot be undone. Type the customer name to confirm.",
+      "deleteHint": "Only possible because there are no active orders. Type their name to confirm.",
+      "deleteBlocked": "Cannot delete: {count} active order(s). Suspend the account instead, or finish or cancel the orders first."
+    },
+    "override": {
+      "title": "Manual override",
+      "intro": "For corrections only. This bypasses the normal step-by-step flow and is recorded in the timeline as an explicit admin override.",
+      "newStatus": "Set status to",
+      "reason": "Reason",
+      "reasonPlaceholder": "Why this manual change is needed...",
+      "apply": "Apply override",
+      "confirmTitle": "Override this request status?",
+      "confirmBody": "This skips the normal transition rules. The change and your reason will be visible in the request timeline and the admin activity log."
+    },
+    "taxonomyIo": {
+      "navTitle": "Import / export",
+      "title": "Bulk taxonomy import & export",
+      "intro": "Download the current taxonomy, edit it in a spreadsheet, and upload it back. Imports only add and update — nothing is ever deleted.",
+      "vehicles": "Vehicles",
+      "parts": "Parts catalogue",
+      "vehiclesCount": "{brands} brands · {models} models · {years} years",
+      "partsCount": "{categories} categories · {subCategories} sub-categories · {parts} parts",
+      "export": "Export",
+      "downloadCsv": "Download CSV",
+      "downloadJson": "Download JSON",
+      "import": "Import",
+      "columns": "Columns",
+      "upsertOnly": "Existing rows are updated; new rows are added. Nothing is deleted.",
+      "runImport": "Import file",
+      "importSummary": "{created} created, {updated} updated, {skipped} skipped."
+    },
+    "activity": {
+      "navTitle": "Activity",
+      "title": "Admin activity",
+      "intro": "Every meaningful admin action, plus the sign-in audit trail.",
+      "actions": "Actions",
+      "noActions": "No admin actions recorded yet.",
+      "logins": "Sign-in attempts",
+      "openTarget": "View",
+      "noLogins": "No sign-in attempts recorded yet."
     }
   },
   "marketing": {

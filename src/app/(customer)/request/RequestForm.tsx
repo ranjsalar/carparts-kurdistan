@@ -99,7 +99,9 @@ export function RequestForm({
           ? colorCode.trim().length > 0
           : currentStep === "source"
             ? preferredSource !== ""
-            : true;
+            : // "details" — notes are required so every request arrives with
+              // context for the sourcing team.
+              notes.trim().length > 0;
 
   function submit() {
     setError(null);
@@ -384,15 +386,18 @@ export function RequestForm({
           </div>
           <div>
             <label className={labelBase}>
-              {t("notes")} <span className="font-normal text-steel-400">({tc("optional")})</span>
+              {t("notes")} <span className="font-normal text-danger-600">({tc("required")})</span>
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
+              required
+              aria-required
               placeholder={t("notesPlaceholder")}
               className={inputBase}
             />
+            <p className="mt-1.5 text-caption text-steel-500">{t("notesHint")}</p>
           </div>
           <div>
             <label className={labelBase}>
@@ -428,7 +433,12 @@ export function RequestForm({
             {tc("continue")}
           </button>
         ) : (
-          <button type="button" onClick={submit} disabled={pending} className={btnAccent}>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={pending || !canContinue}
+            className={btnAccent}
+          >
             {pending ? t("submitting") : t("submit")}
           </button>
         )}

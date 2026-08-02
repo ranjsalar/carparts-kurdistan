@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { computePaymentState } from "@/lib/payments";
 import { SubmitButton } from "@/components/SubmitButton";
+import { SuccessDialog } from "@/components/SuccessDialog";
 import { confirmPaymentAction, rejectPaymentAction } from "./actions";
 
 const methodKeyMap: Record<string, string> = {
@@ -16,9 +17,9 @@ const methodKeyMap: Record<string, string> = {
 export default async function AdminPaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ confirmed?: string; rejected?: string; error?: string }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
-  const { confirmed, rejected, error } = await searchParams;
+  const { success, error } = await searchParams;
   const t = await getTranslations("admin.payments");
   const tp = await getTranslations("payment");
   const te = await getTranslations("errors");
@@ -35,18 +36,8 @@ export default async function AdminPaymentsPage({
 
   return (
     <div>
+      {success && <SuccessDialog messageKey={success} redirectTo="/admin/payments" />}
       <h1 className="mb-6 text-title font-bold text-steel-900">{t("title")}</h1>
-
-      {confirmed && (
-        <p className="mb-4 rounded-lg border-s-4 border-success-600 bg-success-50 px-4 py-2.5 text-caption text-success-700">
-          {t("confirmedBanner")}
-        </p>
-      )}
-      {rejected && (
-        <p className="mb-4 rounded-lg border-s-4 border-steel-400 bg-steel-100 px-4 py-2.5 text-caption text-steel-600">
-          {t("rejectedBanner")}
-        </p>
-      )}
       {error && (
         <p className="mb-4 rounded-lg border-s-4 border-danger-600 bg-danger-50 px-4 py-2.5 text-caption text-danger-700">
           {te.has(error) ? te(error) : te("generic")}

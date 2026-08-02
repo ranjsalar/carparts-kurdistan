@@ -13,11 +13,14 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
   const t = await getTranslations();
+  // Only keys listed here are echoed back, so a crafted ?error= can't inject
+  // arbitrary text into the page.
   const errorKeys: Record<string, string> = {
     invalid: "invalid",
     credentials: "credentials",
     rate: "rate",
     locked: "locked",
+    suspended: "suspended",
   };
 
   return (

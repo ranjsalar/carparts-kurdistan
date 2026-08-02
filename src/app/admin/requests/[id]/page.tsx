@@ -3,14 +3,21 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
-import { statusBadgeClasses } from "@/lib/status";
+import { statusBadgeClasses, statusLabels } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
+import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
+import { renderTimelineNote, type TimelineContext } from "@/lib/timeline";
 import { nextShipmentStatus } from "@/lib/shipments";
 import { SubmitButton } from "@/components/SubmitButton";
-import { advanceShipmentAction } from "./actions";
+import { SuccessDialog } from "@/components/SuccessDialog";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { advanceShipmentAction, overrideRequestStatusAction } from "./actions";
 import { confirmPaymentAction, rejectPaymentAction } from "../../payments/actions";
 import { QuoteForm } from "./QuoteForm";
+import type { RequestStatus } from "@/generated/prisma/enums";
+
+const ALL_STATUSES = Object.keys(statusLabels) as RequestStatus[];
 
 const methodKeyMap: Record<string, string> = {
   FIB: "methodFib",
@@ -30,23 +37,31 @@ export default async function RequestDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{
-    sent?: string;
-    paid?: string;
-    advanced?: string;
-    rejected?: string;
-    confirmed?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const { id } = await params;
-  const { sent, paid, advanced, rejected, error } = await searchParams;
+  const { success, error } = await searchParams;
   const t = await getTranslations("admin.detail");
   const tq = await getTranslations("admin.queue");
   const tpay = await getTranslations("admin.payments");
   const tp = await getTranslations("payment");
   const ts = await getTranslations("statuses");
   const te = await getTranslations("errors");
+  const tl = await getTranslations("timeline");
+  const tov = await getTranslations("admin.override");
+
+  const noteCtx: TimelineContext = {
+    t: (key, values) => tl(key, values),
+    hasKey: (key) => tl.has(key),
+    label: (kind, value) =>
+      kind === "source"
+        ? value === "CHINA"
+          ? t("china")
+          : t("dubai")
+        : kind === "method"
+          ? tp(methodKeyMap[value] ?? value)
+          : ts(value),
+  };
 
   const request = await prisma.partRequest.findUnique({
     where: { id },
@@ -90,26 +105,7 @@ export default async function RequestDetailPage({
         </span>
       </div>
 
-      {sent && (
-        <p className="mb-4 rounded-lg border-s-4 border-success-600 bg-success-50 px-4 py-2.5 text-caption text-success-700">
-          {t("quoteSentBanner")}
-        </p>
-      )}
-      {paid && (
-        <p className="mb-4 rounded-lg border-s-4 border-success-600 bg-success-50 px-4 py-2.5 text-caption text-success-700">
-          {tpay("confirmedBanner")}
-        </p>
-      )}
-      {rejected && (
-        <p className="mb-4 rounded-lg border-s-4 border-steel-400 bg-steel-100 px-4 py-2.5 text-caption text-steel-600">
-          {tpay("rejectedBanner")}
-        </p>
-      )}
-      {advanced && (
-        <p className="mb-4 rounded-lg border-s-4 border-success-600 bg-success-50 px-4 py-2.5 text-caption text-success-700">
-          {t("statusUpdatedBanner")}
-        </p>
-      )}
+      {success && <SuccessDialog messageKey={success} redirectTo="/admin/requests" />}
       {error && (
         <p className="mb-4 rounded-lg border-s-4 border-danger-600 bg-danger-50 px-4 py-2.5 text-caption text-danger-700">
           {te.has(error) ? te(error) : te("generic")}
@@ -125,8 +121,7 @@ export default async function RequestDetailPage({
               <div>
                 <dt className="text-steel-400">{tq("vehicle")}</dt>
                 <dd className="font-medium text-steel-900">
-                  {request.brand.name} {request.carModel.name} ({request.yearRange.startYear}–
-                  {request.yearRange.endYear})
+                  {request.brand.name} {request.carModel.name} ({yearLabel(request.yearRange)})
                 </dd>
               </div>
               <div>
@@ -201,7 +196,9 @@ export default async function RequestDetailPage({
                     {ts(log.status)}
                   </span>
                   <span className="flex-1">
-                    {log.note && <span className="text-steel-700">{log.note}</span>}
+                    {renderTimelineNote(log, noteCtx) && (
+                      <span className="text-steel-700">{renderTimelineNote(log, noteCtx)}</span>
+                    )}
                     <span className="block text-xs text-steel-400" dir="ltr">
                       {log.createdAt.toLocaleString("en-GB", {
                         day: "numeric",
@@ -413,6 +410,53 @@ export default async function RequestDetailPage({
               )}
             </section>
           )}
+
+          {/* Manual override — exceptional corrections only. Recorded in the
+              timeline as an explicit admin override, never as a normal step. */}
+          <section className="mt-6 rounded-2xl border border-accent-200 bg-accent-50/40 p-5">
+            <h2 className="mb-1 font-heading text-overline font-semibold uppercase text-accent-800">
+              {tov("title")}
+            </h2>
+            <p className="mb-3 text-caption text-steel-600">{tov("intro")}</p>
+            <form action={overrideRequestStatusAction} className="space-y-3">
+              <input type="hidden" name="requestId" value={request.id} />
+              <div>
+                <label className="mb-1.5 block text-caption font-medium text-steel-700">
+                  {tov("newStatus")}
+                </label>
+                <select
+                  name="status"
+                  defaultValue={request.status}
+                  className="w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none"
+                >
+                  {ALL_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {ts(s)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption font-medium text-steel-700">
+                  {tov("reason")}
+                </label>
+                <input
+                  name="reason"
+                  required
+                  placeholder={tov("reasonPlaceholder")}
+                  className="w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none"
+                />
+              </div>
+              <ConfirmSubmit
+                label={tov("apply")}
+                title={tov("confirmTitle")}
+                body={tov("confirmBody")}
+                confirmLabel={tov("apply")}
+                danger
+                className="w-full rounded-lg bg-accent-600 px-4 py-2.5 font-heading text-sm font-semibold text-white hover:bg-accent-700"
+              />
+            </form>
+          </section>
         </div>
       </div>
     </div>

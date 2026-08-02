@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { expandYears, MAX_YEAR, MIN_YEAR } from "@/lib/years";
 
 const PATH = "/admin/vehicles";
 
@@ -63,26 +64,34 @@ export async function deleteModel(formData: FormData) {
   if (inUse) redirect(`${PATH}?error=in-use`);
 }
 
+/**
+ * Adds model years. A span is expanded into one row per individual year, so
+ * "2019 to 2025" adds seven selectable years rather than one bracket; leaving
+ * "to" empty adds the single year.
+ */
 export async function addYearRange(formData: FormData) {
   await requireAdmin();
   const carModelId = text(formData, "carModelId");
   const startYear = parseInt(text(formData, "startYear"), 10);
-  const endYear = parseInt(text(formData, "endYear"), 10);
+  const endRaw = text(formData, "endYear");
+  const endYear = endRaw ? parseInt(endRaw, 10) : startYear;
   if (
     !carModelId ||
     !Number.isInteger(startYear) ||
     !Number.isInteger(endYear) ||
-    startYear < 1950 ||
-    endYear > 2100 ||
+    startYear < MIN_YEAR ||
+    endYear > MAX_YEAR ||
     endYear < startYear
   ) {
     redirect(`${PATH}?error=bad-years`);
   }
-  await prisma.yearRange.upsert({
-    where: { carModelId_startYear_endYear: { carModelId, startYear, endYear } },
-    update: {},
-    create: { carModelId, startYear, endYear },
-  });
+  for (const year of expandYears(startYear, endYear)) {
+    await prisma.yearRange.upsert({
+      where: { carModelId_startYear_endYear: { carModelId, startYear: year, endYear: year } },
+      update: {},
+      create: { carModelId, startYear: year, endYear: year },
+    });
+  }
   revalidatePath(PATH);
 }
 

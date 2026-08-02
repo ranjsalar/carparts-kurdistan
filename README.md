@@ -73,7 +73,7 @@ pipeline without living in a spreadsheet.
   to run slightly larger and heavier than Latin to read as comfortably.
 - **Mobile-first** — every page verified at a 375px viewport, since most customers arrive on a
   phone.
-- **Security** — mandatory two-factor authentication for admin accounts, account lockout, rate
+- **Security** — account lockout on repeated failed admin logins, rate
   limiting on authentication and submissions, uploads validated by file signature rather than
   filename, and a strict content security policy. See [SECURITY.md](./SECURITY.md).
 
@@ -89,7 +89,7 @@ pipeline without living in a spreadsheet.
 | ORM | Prisma 7 |
 | Styling | Tailwind CSS v4 |
 | Internationalisation | next-intl |
-| Auth | JWT sessions (`jose`), bcrypt password hashing, TOTP two-factor |
+| Auth | JWT sessions (`jose`), bcrypt password hashing |
 | Validation | Zod |
 | Local infrastructure | Docker Compose |
 
@@ -160,9 +160,8 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Customers** register with email and password, or sign in with a phone number and a one-time
   code. There's no SMS provider wired up in development, so **the code is printed to the server
   console** — copy it from your terminal.
-- **Admins** sign in with email and password and must then complete two-factor authentication. On
-  first sign-in you'll be walked through enrolling an authenticator app (Google Authenticator,
-  Authy, 1Password or similar); after that every sign-in needs a 6-digit code.
+- **Admins** sign in with email and password. Repeated failed attempts lock the account for 15
+  minutes, and every attempt is recorded in the admin login audit trail on the dashboard.
 
 > [!WARNING]
 > The seeded admin account exists only to get you running locally. **Change its email and password —
@@ -201,14 +200,14 @@ prisma/
   seed.ts              taxonomy + development admin account
 src/
   app/
-    (auth)/            login, signup, phone OTP, admin two-factor
+    (auth)/            login, signup, phone OTP
     (customer)/        request form, my requests, tracking, notifications
     (marketing)/       about, contact, FAQ, terms, privacy
     admin/             dashboard, requests queue, quoting, taxonomy
     globals.css        design tokens (@theme)
   components/          shared UI, icons, logo
   i18n/                locale resolution
-  lib/                 auth, quotes, payments, shipments, storage, TOTP, rate limiting
+  lib/                 auth, quotes, payments, shipments, storage, rate limiting
   proxy.ts             admin route gate
 ```
 

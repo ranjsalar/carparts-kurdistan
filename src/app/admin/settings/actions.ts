@@ -22,6 +22,7 @@ export async function updateReceivingAccountAction(formData: FormData) {
     method as PaymentMethod,
     str("accountName"),
     str("accountNumberOrPhone"),
+    str("accountNumberOrPhone2"),
   );
 
   revalidatePath("/admin/settings");

@@ -7,8 +7,21 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });
 
+// Development-only credentials. These are public (this file is committed), so
+// they are used ONLY to bootstrap an empty local database — see main().
 const ADMIN_EMAIL = "admin@carparts.local";
 const ADMIN_PASSWORD = "admin1234";
+
+/*
+  Business payment-receiving details come from the environment rather than this
+  file, so real account numbers are never committed. When a variable is unset
+  (a fresh clone, CI, a new developer) the seed writes a clearly-labelled
+  placeholder instead — the app already detects those and shows a warning on
+  the admin settings page and the customer payment screen, so nothing breaks
+  and nobody mistakes them for real details. See .env.example.
+*/
+const PLACEHOLDER = "PLACEHOLDER — set before launch";
+const fromEnv = (key: string) => process.env[key]?.trim() || PLACEHOLDER;
 
 // brand -> model -> year ranges (grouped by generation, parts usually fit the
 // whole range). Model selection is tuned to the Kurdistan/Iraq market — the
@@ -255,6 +268,77 @@ const vehicles: Record<string, Record<string, [number, number][]>> = {
 type PartSeed = { name: string; nameKu: string; nameAr: string; color?: true };
 type SubSeed = { name: string; nameKu: string; nameAr: string; parts: PartSeed[] };
 
+/*
+  Indicative price ranges in USD, keyed by English part name. These are shown
+  on the request form as "typical range" so a customer who is only price-
+  checking gets an answer immediately — they are deliberately wide and are
+  never a quote; the real number comes from the itemised quote.
+
+  Applied only to parts that have no range yet, so anything an admin has since
+  tuned in the parts screen is never overwritten. A part missing from this map
+  simply shows no range.
+*/
+const PRICE_RANGES: Record<string, [number, number]> = {
+  // Exterior — bumpers, hood, doors
+  "Front Bumper": [80, 150],
+  "Rear Bumper": [90, 320],
+  Hood: [120, 260],
+  "Hood Hinge": [15, 40],
+  "Front Left Door": [180, 400],
+  "Front Right Door": [180, 400],
+  "Rear Left Door": [170, 380],
+  "Rear Right Door": [170, 380],
+  "Door Handle": [15, 45],
+  // Exterior — mirrors, lights, fenders
+  "Left Side Mirror": [45, 140],
+  "Right Side Mirror": [45, 140],
+  "Mirror Glass": [12, 35],
+  "Left Headlight": [70, 260],
+  "Right Headlight": [70, 260],
+  "Left Taillight": [50, 180],
+  "Right Taillight": [50, 180],
+  "Fog Light": [25, 70],
+  "Front Left Fender": [60, 150],
+  "Front Right Fender": [60, 150],
+  // Exterior — body kit & styling
+  "Front Body Kit": [250, 700],
+  "Rear Body Kit": [220, 650],
+  Grille: [60, 220],
+  "Mirror Covers": [30, 90],
+  "Side Skirts": [120, 350],
+  "Rear Diffuser": [90, 260],
+  Spoiler: [80, 250],
+  "Running Boards": [130, 380],
+  // Interior
+  "Driver Seat": [150, 450],
+  "Passenger Seat": [140, 420],
+  "Rear Seat": [180, 500],
+  "Dashboard Panel": [200, 600],
+  "Instrument Cluster": [120, 400],
+  "Door Panel": [60, 180],
+  "Center Console": [80, 260],
+  "AC Compressor": [120, 350],
+  "AC Vent": [10, 35],
+  "Blower Motor": [45, 130],
+  "Cabin Filter": [8, 25],
+  // Engine
+  "Timing Belt": [20, 70],
+  "Serpentine Belt": [12, 40],
+  "Oil Filter": [5, 20],
+  "Air Filter": [8, 30],
+  "Fuel Filter": [10, 35],
+  "Water Pump": [30, 100],
+  "Fuel Pump": [45, 160],
+  "Oil Pump": [50, 170],
+  "Head Gasket": [30, 110],
+  "Valve Cover Gasket": [15, 50],
+  Radiator: [60, 200],
+  "Radiator Fan": [45, 150],
+  Thermostat: [12, 40],
+  "Spark Plugs": [15, 60],
+  "Ignition Coil": [20, 80],
+};
+
 const partTaxonomy: {
   name: string;
   nameKu: string;
@@ -279,40 +363,45 @@ const partTaxonomy: {
       },
       {
         name: "Hood",
-        nameKu: "کاپۆت",
-        nameAr: "الكبوت",
+        nameKu: "بۆنیت",
+        nameAr: "البونيت",
         parts: [
-          { name: "Hood", nameKu: "کاپۆت", nameAr: "الكبوت", color: true },
-          { name: "Hood Hinge", nameKu: "مەفسەلەی کاپۆت", nameAr: "مفصلة الكبوت" },
+          { name: "Hood", nameKu: "بۆنیت", nameAr: "البونيت", color: true },
+          { name: "Hood Hinge", nameKu: "مەفسەلەی بۆنیت", nameAr: "مفصلة البونيت" },
         ],
       },
       {
+        // Doors are named by driver / passenger side rather than left / right:
+        // that is how customers actually describe them, and it removes the
+        // "is left the driver's side?" ambiguity. Iraq drives on the right,
+        // so the driver's side is the LEFT side of the car — which is what the
+        // English names below refer to.
         name: "Doors",
         nameKu: "دەرگاکان",
         nameAr: "الأبواب",
         parts: [
           {
             name: "Front Left Door",
-            nameKu: "دەرگای پێشەوەی چەپ",
-            nameAr: "الباب الأمامي الأيسر",
+            nameKu: "دەرگای سایەق",
+            nameAr: "باب السائق",
             color: true,
           },
           {
             name: "Front Right Door",
-            nameKu: "دەرگای پێشەوەی ڕاست",
-            nameAr: "الباب الأمامي الأيمن",
+            nameKu: "دەرگای سەکن",
+            nameAr: "باب الراكب",
             color: true,
           },
           {
             name: "Rear Left Door",
-            nameKu: "دەرگای دواوەی چەپ",
-            nameAr: "الباب الخلفي الأيسر",
+            nameKu: "دەرگای پشتی سایەق",
+            nameAr: "الباب الخلفي - جهة السائق",
             color: true,
           },
           {
             name: "Rear Right Door",
-            nameKu: "دەرگای دواوەی ڕاست",
-            nameAr: "الباب الخلفي الأيمن",
+            nameKu: "دەرگای پشتی سەکن",
+            nameAr: "الباب الخلفي - جهة الراكب",
             color: true,
           },
           { name: "Door Handle", nameKu: "دەسکی دەرگا", nameAr: "مقبض الباب", color: true },
@@ -325,14 +414,14 @@ const partTaxonomy: {
         parts: [
           {
             name: "Left Side Mirror",
-            nameKu: "ئاوێنەی لای چەپ",
-            nameAr: "المرآة الجانبية اليسرى",
+            nameKu: "ئاوێنەی لای سایەق",
+            nameAr: "مرآة جهة السائق",
             color: true,
           },
           {
             name: "Right Side Mirror",
-            nameKu: "ئاوێنەی لای ڕاست",
-            nameAr: "المرآة الجانبية اليمنى",
+            nameKu: "ئاوێنەی لای سەکن",
+            nameAr: "مرآة جهة الراكب",
             color: true,
           },
           { name: "Mirror Glass", nameKu: "شووشەی ئاوێنە", nameAr: "زجاج المرآة" },
@@ -345,19 +434,23 @@ const partTaxonomy: {
         parts: [
           {
             name: "Left Headlight",
-            nameKu: "چرای پێشەوەی چەپ",
-            nameAr: "المصباح الأمامي الأيسر",
+            nameKu: "چرای پێشەوەی لای سایەق",
+            nameAr: "المصباح الأمامي - جهة السائق",
           },
           {
             name: "Right Headlight",
-            nameKu: "چرای پێشەوەی ڕاست",
-            nameAr: "المصباح الأمامي الأيمن",
+            nameKu: "چرای پێشەوەی لای سەکن",
+            nameAr: "المصباح الأمامي - جهة الراكب",
           },
-          { name: "Left Taillight", nameKu: "چرای دواوەی چەپ", nameAr: "المصباح الخلفي الأيسر" },
+          {
+            name: "Left Taillight",
+            nameKu: "چرای دواوەی لای سایەق",
+            nameAr: "المصباح الخلفي - جهة السائق",
+          },
           {
             name: "Right Taillight",
-            nameKu: "چرای دواوەی ڕاست",
-            nameAr: "المصباح الخلفي الأيمن",
+            nameKu: "چرای دواوەی لای سەکن",
+            nameAr: "المصباح الخلفي - جهة الراكب",
           },
           { name: "Fog Light", nameKu: "چرای تەم", nameAr: "مصباح الضباب" },
         ],
@@ -369,16 +462,34 @@ const partTaxonomy: {
         parts: [
           {
             name: "Front Left Fender",
-            nameKu: "چامۆرلوغی پێشەوەی چەپ",
-            nameAr: "الرفرف الأمامي الأيسر",
+            nameKu: "چامۆرلوغی لای سایەق",
+            nameAr: "الرفرف الأمامي - جهة السائق",
             color: true,
           },
           {
             name: "Front Right Fender",
-            nameKu: "چامۆرلوغی پێشەوەی ڕاست",
-            nameAr: "الرفرف الأمامي الأيمن",
+            nameKu: "چامۆرلوغی لای سەکن",
+            nameAr: "الرفرف الأمامي - جهة الراكب",
             color: true,
           },
+        ],
+      },
+      {
+        // Body-kit / styling upgrades. Like every other part in this taxonomy
+        // these are not tied to a brand — Part belongs to a SubCategory only,
+        // so all of these are selectable for any brand, model and year.
+        name: "Body Kit & Styling",
+        nameKu: "بۆدی کیت و جوانکاری",
+        nameAr: "أطقم البودي والتزيين",
+        parts: [
+          { name: "Front Body Kit", nameKu: "بۆدی کیتی پێشەوە", nameAr: "طقم بودي أمامي", color: true },
+          { name: "Rear Body Kit", nameKu: "بۆدی کیتی دواوە", nameAr: "طقم بودي خلفي", color: true },
+          { name: "Grille", nameKu: "گریلی پێشەوە", nameAr: "شبك الصدام", color: true },
+          { name: "Mirror Covers", nameKu: "قەپاغی ئاوێنەکان", nameAr: "أغطية المرايا", color: true },
+          { name: "Side Skirts", nameKu: "سکێرتی تەنیشت", nameAr: "سكيرت جانبي", color: true },
+          { name: "Rear Diffuser", nameKu: "دیفیوزەری دواوە", nameAr: "ديفيوزر خلفي", color: true },
+          { name: "Spoiler", nameKu: "سپۆیلەر", nameAr: "سبويلر", color: true },
+          { name: "Running Boards", nameKu: "پێپلیکانەی تەنیشت", nameAr: "مراقي جانبية" },
         ],
       },
     ],
@@ -394,15 +505,15 @@ const partTaxonomy: {
         nameKu: "کورسییەکان",
         nameAr: "المقاعد",
         parts: [
-          { name: "Driver Seat", nameKu: "کورسی شۆفێر", nameAr: "مقعد السائق" },
-          { name: "Passenger Seat", nameKu: "کورسی سەرنشین", nameAr: "مقعد الراكب" },
+          { name: "Driver Seat", nameKu: "کورسی سایەق", nameAr: "مقعد السائق" },
+          { name: "Passenger Seat", nameKu: "کورسی سەکن", nameAr: "مقعد الراكب" },
           { name: "Rear Seat", nameKu: "کورسی دواوە", nameAr: "المقعد الخلفي" },
         ],
       },
       {
         name: "Dashboard",
         nameKu: "داشبۆرد",
-        nameAr: "لوحة القيادة",
+        nameAr: "الطبلون",
         parts: [
           { name: "Dashboard Panel", nameKu: "پانێلی داشبۆرد", nameAr: "واجهة الطبلون" },
           { name: "Instrument Cluster", nameKu: "تابلۆی گەیجەکان", nameAr: "لوحة العدادات" },
@@ -432,7 +543,7 @@ const partTaxonomy: {
   },
   {
     name: "Engine",
-    nameKu: "بزوێنەر",
+    nameKu: "ماتۆر",
     nameAr: "محرك",
     sortOrder: 3,
     subs: [
@@ -502,34 +613,61 @@ const partTaxonomy: {
 ];
 
 async function main() {
-  await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: {},
-    create: {
-      name: "Admin",
-      email: ADMIN_EMAIL,
-      passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
-      role: "ADMIN",
-    },
-  });
-  console.log(`Admin user: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-
-  // Payment receiving accounts — the business accounts customers send money to.
-  // Seeded with clearly-labeled placeholders so the flow works end-to-end
-  // before real details are entered on the admin settings page. Cash on
-  // delivery has no receiving account (it's collected in person).
-  for (const method of ["FIB", "FASTPAY", "QICARD"] as const) {
-    await prisma.paymentReceivingAccount.upsert({
-      where: { method },
-      update: {}, // never clobber real values an admin has already entered
-      create: {
-        method,
-        accountName: "PLACEHOLDER — set real account before launch",
-        accountNumberOrPhone: "PLACEHOLDER — not a real number",
+  // Development-only convenience account, created ONLY when the database has
+  // no admin at all (i.e. a fresh local setup). Never upsert unconditionally:
+  // once a real admin exists with real credentials, re-running the seed must
+  // not quietly re-add a second admin whose password is public in this file.
+  const existingAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+  if (existingAdmin) {
+    console.log("Admin already exists — skipping the development admin account.");
+  } else {
+    await prisma.user.create({
+      data: {
+        name: "Admin",
+        email: ADMIN_EMAIL,
+        passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
+        role: "ADMIN",
       },
     });
+    console.log(`Development admin created: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+    console.log("Change these before deploying anywhere reachable.");
   }
-  console.log("Payment receiving accounts seeded (placeholders).");
+
+  // Payment receiving accounts — the business accounts customers are told to
+  // send money to. These are not secrets: every customer is shown them on the
+  // payment screen. Cash on delivery has no receiving account (collected in
+  // person). Qi Card needs BOTH a card number and the registered phone, so it
+  // uses the optional second field.
+  const accountHolder = fromEnv("PAYMENT_ACCOUNT_HOLDER");
+  const receivingAccounts = [
+    {
+      method: "FIB" as const,
+      accountName: accountHolder,
+      accountNumberOrPhone: fromEnv("PAYMENT_FIB_PHONE"),
+      accountNumberOrPhone2: null,
+    },
+    {
+      method: "FASTPAY" as const,
+      accountName: accountHolder,
+      accountNumberOrPhone: fromEnv("PAYMENT_FASTPAY_PHONE"),
+      accountNumberOrPhone2: null,
+    },
+    {
+      // Qi Card needs both the card number and the registered phone.
+      method: "QICARD" as const,
+      accountName: accountHolder,
+      accountNumberOrPhone: fromEnv("PAYMENT_QICARD_NUMBER"),
+      accountNumberOrPhone2: fromEnv("PAYMENT_QICARD_PHONE"),
+    },
+  ];
+  for (const account of receivingAccounts) {
+    await prisma.paymentReceivingAccount.upsert({
+      where: { method: account.method },
+      update: {}, // never clobber values an admin has edited in the settings UI
+      create: account,
+    });
+  }
+  console.log("Payment receiving accounts seeded.");
 
   for (const [brandName, models] of Object.entries(vehicles)) {
     const brand = await prisma.brand.upsert({
@@ -543,19 +681,29 @@ async function main() {
         update: {},
         create: { brandId: brand.id, name: modelName },
       });
-      for (const [startYear, endYear] of ranges) {
-        await prisma.yearRange.upsert({
-          where: {
-            carModelId_startYear_endYear: { carModelId: model.id, startYear, endYear },
-          },
-          update: {},
-          create: { carModelId: model.id, startYear, endYear },
-        });
+      // The spans above are each model's real production years; they are stored
+      // as one row per individual year so customers pick an exact year instead
+      // of a generation bracket. A 2019–2025 span becomes 7 rows.
+      for (const [from, to] of ranges) {
+        for (let year = from; year <= to; year++) {
+          await prisma.yearRange.upsert({
+            where: {
+              carModelId_startYear_endYear: {
+                carModelId: model.id,
+                startYear: year,
+                endYear: year,
+              },
+            },
+            update: {},
+            create: { carModelId: model.id, startYear: year, endYear: year },
+          });
+        }
       }
     }
   }
   console.log("Vehicle taxonomy seeded.");
 
+  let rangesApplied = 0;
   for (const cat of partTaxonomy) {
     const category = await prisma.category.upsert({
       where: { name: cat.name },
@@ -579,7 +727,7 @@ async function main() {
         },
       });
       for (const part of subSeed.parts) {
-        await prisma.part.upsert({
+        const saved = await prisma.part.upsert({
           where: { subCategoryId_name: { subCategoryId: sub.id, name: part.name } },
           update: {
             nameKu: part.nameKu,
@@ -594,10 +742,24 @@ async function main() {
             requiresColorCode: part.color === true,
           },
         });
+
+        // Fill in the indicative range only when the part doesn't have one, so
+        // ranges edited by an admin in the parts screen survive re-seeding.
+        const range = PRICE_RANGES[part.name];
+        if (range && saved.priceMinUsd === null && saved.priceMaxUsd === null) {
+          await prisma.part.update({
+            where: { id: saved.id },
+            data: {
+              priceMinUsd: range[0].toFixed(2),
+              priceMaxUsd: range[1].toFixed(2),
+            },
+          });
+          rangesApplied++;
+        }
       }
     }
   }
-  console.log("Part taxonomy seeded.");
+  console.log(`Part taxonomy seeded (${rangesApplied} indicative price ranges applied).`);
 }
 
 main()
