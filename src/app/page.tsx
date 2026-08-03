@@ -159,7 +159,7 @@ export default async function Home() {
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 lg:grid-cols-2 lg:py-20">
           <div>
             <p className={`${overline} text-brand-300`}>
-              {t("common.brand")} {t("common.brandSuffix")}
+              {t("common.brand")}
             </p>
             <h1 className="mt-3 text-display font-bold text-white">{t("home.heroTitle")}</h1>
             <p className="mt-4 max-w-lg text-body text-brand-100">{t("home.tagline")}</p>

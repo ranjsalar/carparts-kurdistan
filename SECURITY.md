@@ -1,4 +1,4 @@
-# Security Notes — CarParts Kurdistan
+# Security Notes — KalaryParts
 
 Last hardening pass: 2026-07-18. This summarizes what is handled in the code,
 what is deliberately deferred, and what must be done manually before going live.
@@ -85,7 +85,7 @@ what is deliberately deferred, and what must be done manually before going live.
 3. **Database**: don't expose Postgres publicly (bind to localhost or a
    private network; the dev `docker-compose.yml` maps it to host port 5433).
    Set up automated backups.
-4. **Seeded admin account**: change or delete `admin@carparts.local`
+4. **Seeded admin account**: change or delete `admin@kalaryparts.local`
    (password `admin1234`) before production; create real admin accounts with
    strong passwords.
 5. **Test data**: wipe the dev test customer (+9647501234567) and its

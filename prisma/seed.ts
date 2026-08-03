@@ -9,7 +9,7 @@ const prisma = new PrismaClient({
 
 // Development-only credentials. These are public (this file is committed), so
 // they are used ONLY to bootstrap an empty local database — see main().
-const ADMIN_EMAIL = "admin@carparts.local";
+const ADMIN_EMAIL = "admin@kalaryparts.local";
 const ADMIN_PASSWORD = "admin1234";
 
 /*

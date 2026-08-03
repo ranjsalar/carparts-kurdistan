@@ -50,7 +50,7 @@ export async function SiteFooter() {
     <footer className="bg-steel-950 text-steel-300">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-6">
         <div className="sm:col-span-2">
-          <Logo tone="light" />
+          <Logo tone="light" variant="full" size="lg" />
           <p className="mt-4 max-w-xs text-caption leading-relaxed text-steel-400">
             {th("tagline")}
           </p>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="420" height="100">
+  <path d="M104 100 L104 174 L122 174 L122 148 L131 139 L153 174 L175 174 L144 125 L173 100 L149 100 L122 124 L122 100 Z"
+        fill="#ffffff"
+        transform="translate(-70,-68.5) scale(0.865)"/>
+  <circle cx="78" cy="84" r="9" fill="#E8721F"/>
+  <text x="110" y="52" font-size="34" font-weight="700" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" letter-spacing="-0.5">KalaryParts</text>
+  <text x="111" y="74" font-size="12" letter-spacing="3" fill="#7BB8BD" font-family="Arial, Helvetica, sans-serif">ANY PART &#183; ANY CAR</text>
+</svg>

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  CarParts Kurdistan design tokens
+  KalaryParts design tokens
   ────────────────────────────────
   brand  — "petrol": deep automotive teal. Primary actions, links, focus.
   accent — "signal": hazard-amber. Sparingly: highlights, active steps, CTAs.
@@ -69,12 +69,11 @@
   --color-danger-600: #c2362f;
   --color-danger-700: #9e2b26;
 
-  /* Typography — Space Grotesk for headings, IBM Plex Sans for body,
-     IBM Plex Sans Arabic fills Kurdish/Arabic glyphs in both stacks. */
-  --font-heading:
-    var(--font-heading-latin), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
-  --font-body:
-    var(--font-body-latin), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  /* Typography — one family per language, set on <html> by the root layout:
+     Inter (English), Vazirmatn (Kurdish), Cairo (Arabic). Headings and body
+     share the family; hierarchy comes from weight and size. */
+  --font-heading: var(--font-app), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-app), ui-sans-serif, system-ui, sans-serif;
 
   /* Type scale — second legibility pass (2026-07-21): the whole scale moved
      up for ALL languages after real-device feedback that body text, form
@@ -132,38 +131,47 @@ h4 {
 }
 
 /*
-  Arabic-script legibility compensation — Kurdish (Sorani) and Arabic share
-  the Arabic script and the same IBM Plex Sans Arabic font. At an identical
-  nominal size/weight, Arabic-script text reads smaller and thinner than
-  Latin text: shorter x-height, no ascenders/descenders for the eye to
-  anchor on, and cursive joining strokes that thin out first. This is a
-  known cross-script typography effect, not a design preference, so every
-  level of the scale runs larger here — more so at small sizes, where the
-  effect hurts legibility most. Weight is bumped one step for the same
-  reason ("light" reads as "too thin" in Arabic before it does in Latin).
+  Arabic-script legibility compensation — revised (2026-08-03) after moving to
+  Vazirmatn (Kurdish) and Cairo (Arabic).
 
-  This overrides the same custom properties consumed by every text- and
-  font-weight utility class, so no component needs to know the language —
-  English is completely unaffected since these rules only match ar/ku.
+  The original compensation existed because Arabic script was being rendered by
+  the Arabic companion of a Latin family, and set against Latin metrics it read
+  smaller and thinner: shorter effective x-height, no ascenders/descenders to
+  anchor the eye, and joining strokes that thin out first. Every step of the
+  scale was pushed up and every weight bumped one notch.
 
-  Negative letter-spacing is also zeroed out: it's a Latin tight-headline
-  convention that fights Arabic's naturally connected joining strokes
-  instead of tightening them cleanly.
+  Vazirmatn and Cairo are purpose-built for this script and already carry a
+  large apparent size and sturdier strokes, so that blanket compensation is now
+  too much. Two deliberate changes:
+
+  1. The size bump is kept only where it still earns its place — body, caption
+     and the small UI sizes, where the effect actually hurts reading. Display,
+     title and heading sizes now match the Latin scale, because at those sizes
+     the script is plainly legible and the extra bump only made Arabic and
+     Kurdish headings overshoot their English equivalents.
+
+  2. The weight bump is removed entirely. It was compensating for a thin
+     regular cut that these faces don't have — and now that one family carries
+     both headings and body, forcing the base weight to 500 would compress the
+     very contrast (400 body against 600/700 headings) the hierarchy relies on.
+
+  Negative letter-spacing stays zeroed: tight tracking is a Latin headline
+  convention that fights Arabic's connected joining strokes rather than
+  tightening them.
 */
 :root[lang="ar"],
 :root[lang="ku"] {
-  --text-display: 3.25rem;
+  /* Large sizes: no compensation — these match the Latin scale. */
   --text-display--line-height: 1.2;
   --text-display--letter-spacing: 0em;
 
-  --text-title: 2rem;
   --text-title--line-height: 1.3;
   --text-title--letter-spacing: 0em;
 
-  --text-heading: 1.4375rem;
   --text-heading--line-height: 1.45;
   --text-heading--letter-spacing: 0em;
 
+  /* Reading and small UI text: a modest bump still helps. */
   --text-body: 1.125rem;
   --text-body--line-height: 1.75;
 
@@ -179,18 +187,6 @@ h4 {
 
   --text-xs: 0.875rem;
   --text-xs--line-height: 1.5;
-
-  /* Bumps every .font-normal/.font-medium use one weight step heavier. */
-  --font-weight-normal: 500;
-  --font-weight-medium: 600;
-}
-
-/* Text with no explicit font-weight utility (plain paragraphs, etc.) still
-   defaults to the font's regular cut unless told otherwise — bump that
-   baseline too so nothing slips through the crack above. */
-:root[lang="ar"] body,
-:root[lang="ku"] body {
-  font-weight: 500;
 }
 
 /* Micro-interaction for panels/menus that appear on state change (language

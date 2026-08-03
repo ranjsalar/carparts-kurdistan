@@ -52,7 +52,7 @@ const notificationCopy: Partial<
   COMPLETED: {
     templateKey: "shipmentCompleted",
     title: "Order completed",
-    body: (part) => `Your ${part} order is complete. Thanks for using CarParts Kurdistan!`,
+    body: (part) => `Your ${part} order is complete. Thanks for using KalaryParts!`,
   },
 };
 

@@ -1,4 +1,4 @@
-# CarParts Kurdistan
+# KalaryParts
 
 A web platform for ordering car parts in Kurdistan, Iraq — for any brand, any model, any year.
 
@@ -69,8 +69,9 @@ pipeline without living in a spreadsheet.
 ### Platform
 
 - **Three languages, properly** — English, Kurdish (Sorani) and Arabic across the entire interface,
-  with full right-to-left layout and a type scale tuned per script, since Arabic-script text needs
-  to run slightly larger and heavier than Latin to read as comfortably.
+  with full right-to-left layout and a typeface per language: Inter for English, Vazirmatn for
+  Kurdish and Cairo for Arabic, each carrying both headings and body so hierarchy comes from
+  weight. Reading sizes are nudged up slightly for the Arabic script, where it still helps.
 - **Mobile-first** — every page verified at a 375px viewport, since most customers arrive on a
   phone.
 - **Security** — account lockout on repeated failed admin logins, rate
