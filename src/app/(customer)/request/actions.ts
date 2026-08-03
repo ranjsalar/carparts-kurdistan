@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { submitPartRequest } from "@/lib/requests";
 import { saveUpload } from "@/lib/storage";
-import { rateLimit } from "@/lib/rate-limit";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { noteEndpointHit } from "@/lib/threat-detection";
 
 export type CreateRequestResult = { ok: false; error: string };
 
@@ -12,7 +13,9 @@ export async function createRequest(formData: FormData): Promise<CreateRequestRe
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  if (!rateLimit(`submit:${user.id}`, 10, 60 * 60 * 1000).ok) {
+  await noteEndpointHit(await clientIp());
+
+  if (!(await rateLimit(`submit:${user.id}`, 10, 60 * 60 * 1000)).ok) {
     return { ok: false, error: "submitRateLimited" };
   }
 

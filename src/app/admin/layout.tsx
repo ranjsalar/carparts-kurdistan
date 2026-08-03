@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { logout } from "@/app/(auth)/actions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Logo } from "@/components/Logo";
+import { countOpenSecurityEvents } from "@/lib/threat-detection";
 
 // Belt-and-braces with the X-Robots-Tag header set in next.config.ts.
 export const metadata = { robots: { index: false, follow: false } };
@@ -16,9 +17,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const t = await getTranslations("admin");
   const tc = await getTranslations("common");
-  const pendingPayments = await prisma.payment.count({
-    where: { status: "PENDING_CONFIRMATION" },
-  });
+  const [pendingPayments, securityAlerts] = await Promise.all([
+    prisma.payment.count({ where: { status: "PENDING_CONFIRMATION" } }),
+    countOpenSecurityEvents(),
+  ]);
 
   return (
     <div className="min-h-screen bg-steel-50">
@@ -80,6 +82,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
+      {/* Above the payments bar and in red, not amber: this is the one thing
+          on the screen that means something may be actively going wrong. */}
+      {securityAlerts > 0 && (
+        <Link
+          href="/admin/activity#security"
+          className="block bg-danger-600 transition-colors hover:bg-danger-700"
+        >
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-5 py-2 text-center font-heading text-caption font-semibold text-white">
+            {t("security.alert", { count: securityAlerts })}
+            <span aria-hidden>→</span>
+          </div>
+        </Link>
+      )}
       {pendingPayments > 0 && (
         <Link href="/admin/payments" className="block bg-accent-600 transition-colors hover:bg-accent-700">
           <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-5 py-2 text-center font-heading text-caption font-semibold text-white">

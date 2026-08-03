@@ -335,6 +335,55 @@ model AdminActivityLog {
   @@index([createdAt])
 }
 
+// ─── Abuse counters + threat detection ───────────────────────────────────────
+
+// Generic expiring counter, keyed by an opaque string. Backs two things:
+//
+//   "rl:<scope>:<id>"    fixed-window rate-limit buckets
+//   "seen:<kind>:<ip>:<subject>"
+//                        a marker that one IP has failed against one account /
+//                        phone recently. Counting rows under the
+//                        "seen:<kind>:<ip>:" prefix gives the number of
+//                        DISTINCT accounts that IP has attacked, which is what
+//                        separates credential stuffing from one person
+//                        mistyping their own password.
+//
+// This lives in Postgres rather than process memory so counters survive
+// redeploys and stay correct if the app ever runs more than one instance.
+// Rows are pruned opportunistically once expired.
+model RateCounter {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+// A detected attack pattern, raised by src/lib/threat-detection.ts. Kept
+// separate from AdminActivityLog so hostile traffic is never mixed in with
+// ordinary staff actions — it has its own alert bar and its own section on the
+// activity screen, and stays visible until an admin acknowledges it.
+// Details are English for the same reason as the rest of the audit trail.
+model SecurityEvent {
+  id             String    @id @default(cuid())
+  kind           String // CREDENTIAL_STUFFING, OTP_ABUSE, ADMIN_TARGETING, HIGH_VOLUME
+  ip             String
+  // How many distinct accounts/phones were hit, or how many requests were
+  // seen — meaning depends on kind, and the detail string spells it out.
+  observed       Int
+  detail         String
+  // Repeat detections from the same IP fold into the open event instead of
+  // creating a new row per attempt, so one attack is one alert.
+  hitCount       Int       @default(1)
+  lastSeenAt     DateTime  @default(now())
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  createdAt      DateTime  @default(now())
+
+  @@index([acknowledgedAt, createdAt])
+  @@index([kind, ip, acknowledgedAt])
+}
+
 // ─── Notifications (in-app; WhatsApp delivery hooks onto the same rows) ──────
 
 model Notification {

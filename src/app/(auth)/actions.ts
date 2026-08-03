@@ -8,6 +8,12 @@ import { prisma } from "@/lib/db";
 import { createSession, destroySession } from "@/lib/auth";
 import { issueOtp, normalizePhone, verifyOtpCode } from "@/lib/otp";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import {
+  SECURITY_EVENT,
+  noteAdminAuthFailure,
+  noteAuthFailure,
+  noteEndpointHit,
+} from "@/lib/threat-detection";
 
 // ── Admin lockout + audit ────────────────────────────────────────────────────
 
@@ -59,9 +65,10 @@ export async function login(formData: FormData) {
 
   const ip = await clientIp();
   const email = parsed.data.email.toLowerCase();
+  await noteEndpointHit(ip);
   if (
-    !rateLimit(`login:ip:${ip}`, 10, 15 * 60 * 1000).ok ||
-    !rateLimit(`login:email:${email}`, 5, 15 * 60 * 1000).ok
+    !(await rateLimit(`login:ip:${ip}`, 10, 15 * 60 * 1000)).ok ||
+    !(await rateLimit(`login:email:${email}`, 5, 15 * 60 * 1000)).ok
   ) {
     redirect("/login?error=rate");
   }
@@ -74,6 +81,9 @@ export async function login(formData: FormData) {
   // account can't keep burning attempts, and every outcome is audit-logged.
   if (user?.role === "ADMIN" && isLocked(user)) {
     await logAdminAttempt(email, user.id, false, "locked");
+    // Attempts that arrive while the account is already locked are the
+    // clearest signal of all — nobody keeps trying past a lockout by accident.
+    await noteAdminAuthFailure(ip);
     redirect("/login?error=locked");
   }
 
@@ -81,9 +91,15 @@ export async function login(formData: FormData) {
   if (user?.suspendedAt) redirect("/login?error=suspended");
 
   if (!user?.passwordHash || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+    // Counted whatever the account was — including addresses that don't exist
+    // here, since a stuffing list is mostly misses. The detector only cares
+    // how many DISTINCT accounts this IP has failed against, so one customer
+    // mistyping their own password never approaches the threshold.
+    await noteAuthFailure({ kind: SECURITY_EVENT.credentialStuffing, ip, subject: email });
     if (user?.role === "ADMIN") {
       await recordAdminFailure(user.id);
       await logAdminAttempt(email, user.id, false, "password_fail");
+      await noteAdminAuthFailure(ip);
     }
     redirect("/login?error=credentials");
   }
@@ -122,6 +138,8 @@ export async function signup(formData: FormData) {
     phone: formData.get("phone"),
   });
   if (!parsed.success) redirect("/signup?error=invalid");
+
+  await noteEndpointHit(await clientIp());
 
   // Blank/whitespace-only input always becomes null — never an empty string
   // — so it can never collide with another blank signup under the phone
@@ -182,9 +200,10 @@ export async function requestPhoneOtp(rawPhone: string): Promise<{ ok: boolean; 
   if (!phone) return { ok: false, error: "phoneInvalid" };
 
   const ip = await clientIp();
+  await noteEndpointHit(ip);
   if (
-    !rateLimit(`otp-req:ip:${ip}`, 10, 60 * 60 * 1000).ok ||
-    !rateLimit(`otp-req:phone:${phone}`, 5, 60 * 60 * 1000).ok
+    !(await rateLimit(`otp-req:ip:${ip}`, 10, 60 * 60 * 1000)).ok ||
+    !(await rateLimit(`otp-req:phone:${phone}`, 5, 60 * 60 * 1000)).ok
   ) {
     return { ok: false, error: "otpRateLimited" };
   }
@@ -205,15 +224,21 @@ export async function verifyPhoneOtp(
   }
 
   const ip = await clientIp();
+  await noteEndpointHit(ip);
   if (
-    !rateLimit(`otp-ver:ip:${ip}`, 20, 15 * 60 * 1000).ok ||
-    !rateLimit(`otp-ver:phone:${phone}`, 10, 15 * 60 * 1000).ok
+    !(await rateLimit(`otp-ver:ip:${ip}`, 20, 15 * 60 * 1000)).ok ||
+    !(await rateLimit(`otp-ver:phone:${phone}`, 10, 15 * 60 * 1000)).ok
   ) {
     return { ok: false, error: "otpRateLimited" };
   }
 
   const result = await verifyOtpCode(phone, code);
-  if (!result.ok) return { ok: false, error: result.error };
+  if (!result.ok) {
+    // Same distinct-subject logic as the password path: probing many numbers
+    // is the pattern, one person mistyping their own code is not.
+    await noteAuthFailure({ kind: SECURITY_EVENT.otpAbuse, ip, subject: phone });
+    return { ok: false, error: result.error };
+  }
 
   let user = await prisma.user.findUnique({ where: { phone } });
 

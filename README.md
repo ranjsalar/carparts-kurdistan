@@ -74,9 +74,11 @@ pipeline without living in a spreadsheet.
   weight. Reading sizes are nudged up slightly for the Arabic script, where it still helps.
 - **Mobile-first** — every page verified at a 375px viewport, since most customers arrive on a
   phone.
-- **Security** — account lockout on repeated failed admin logins, rate
-  limiting on authentication and submissions, uploads validated by file signature rather than
-  filename, and a strict content security policy. See [SECURITY.md](./SECURITY.md).
+- **Security** — account lockout on repeated failed admin logins, database-backed rate limiting on
+  authentication and submissions (counters survive restarts and multiple instances), detection of
+  credential-stuffing, OTP-abuse and admin-targeting patterns with a red alert bar for admins,
+  uploads validated by file signature rather than filename, and a strict content security policy.
+  See [SECURITY.md](./SECURITY.md).
 
 ---
 

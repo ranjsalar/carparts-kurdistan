@@ -696,7 +696,14 @@
       "noActions": "No admin actions recorded yet.",
       "logins": "Sign-in attempts",
       "openTarget": "View",
-      "noLogins": "No sign-in attempts recorded yet."
+      "noLogins": "No sign-in attempts recorded yet.",
+      "security": "Security alerts",
+      "noSecurity": "No suspicious activity detected.",
+      "acknowledge": "Acknowledge",
+      "acknowledgedBy": "Acknowledged by {who}"
+    },
+    "security": {
+      "alert": "{count} security alert(s) need review — open now"
     }
   },
   "marketing": {
