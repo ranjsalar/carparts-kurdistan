@@ -127,7 +127,7 @@ export default async function Home() {
               <>
                 <Link
                   href="/login"
-                  className="font-heading text-caption font-semibold text-steel-600 transition-colors hover:text-brand-700"
+                  className="inline-flex min-h-11 items-center rounded-lg px-2 font-heading text-caption font-semibold text-steel-600 transition-colors hover:bg-steel-100 hover:text-brand-700"
                 >
                   {t("common.login")}
                 </Link>
@@ -221,7 +221,7 @@ export default async function Home() {
                       <li key={sub.id}>
                         <Link
                           href={`/request?categoryId=${cat.id}&subCategoryId=${sub.id}`}
-                          className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-caption text-steel-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                          className="group flex min-h-11 items-center gap-2 rounded-lg px-2 text-caption text-steel-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
                         >
                           <SubIcon size={16} className="text-steel-400 transition-colors group-hover:text-brand-600" />
                           {localized(sub)}

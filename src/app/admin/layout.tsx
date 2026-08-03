@@ -38,16 +38,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 </span>
               </span>
             </Link>
-            <nav className="flex flex-wrap gap-5 font-heading text-caption font-semibold text-brand-200">
-              <Link href="/admin" className="transition-colors hover:text-white">
+            <nav className="-my-2 flex flex-wrap items-center gap-x-1 gap-y-0 font-heading text-caption font-semibold text-brand-200">
+              <Link href="/admin" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("nav.dashboard")}
               </Link>
-              <Link href="/admin/requests" className="transition-colors hover:text-white">
+              <Link href="/admin/requests" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("nav.requests")}
               </Link>
               <Link
                 href="/admin/payments"
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white"
               >
                 {t("payments.navTitle")}
                 {pendingPayments > 0 && (
@@ -56,22 +56,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                   </span>
                 )}
               </Link>
-              <Link href="/admin/customers" className="transition-colors hover:text-white">
+              <Link href="/admin/customers" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("customers.navTitle")}
               </Link>
-              <Link href="/admin/vehicles" className="transition-colors hover:text-white">
+              <Link href="/admin/vehicles" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("nav.vehicles")}
               </Link>
-              <Link href="/admin/parts" className="transition-colors hover:text-white">
+              <Link href="/admin/parts" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("nav.parts")}
               </Link>
-              <Link href="/admin/taxonomy" className="transition-colors hover:text-white">
+              <Link href="/admin/taxonomy" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("taxonomyIo.navTitle")}
               </Link>
-              <Link href="/admin/activity" className="transition-colors hover:text-white">
+              <Link href="/admin/activity" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("activity.navTitle")}
               </Link>
-              <Link href="/admin/settings" className="transition-colors hover:text-white">
+              <Link href="/admin/settings" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("settings.navTitle")}
               </Link>
             </nav>
@@ -79,7 +79,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex items-center gap-2.5">
             <span className="hidden text-caption text-brand-300 sm:inline">{user.name}</span>
             <form action={logout}>
-              <button className="rounded-lg border border-white/20 px-3 py-1.5 font-heading text-caption font-semibold text-white transition-colors hover:bg-white/10">
+              <button className="inline-flex min-h-11 items-center rounded-lg border border-white/20 px-3 font-heading text-caption font-semibold text-white transition-colors hover:bg-white/10">
                 {tc("logout")}
               </button>
             </form>

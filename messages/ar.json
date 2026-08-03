@@ -576,7 +576,10 @@
       "priceMin": "الأدنى",
       "priceMax": "الأعلى",
       "priceRangeSet": "حفظ",
-      "addYearsHint": "يضيف كل سنة على حدة"
+      "addYearsHint": "يضيف كل سنة على حدة",
+      "manageYears": "إدارة السنوات",
+      "collapseYears": "تم",
+      "yearCount": "{count} سنة"
     },
     "detail": {
       "backToQueue": "رجوع إلى القائمة",

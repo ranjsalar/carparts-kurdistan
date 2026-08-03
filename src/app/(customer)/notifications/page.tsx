@@ -110,7 +110,7 @@ export default async function NotificationsPage() {
                 {n.requestId && (
                   <Link
                     href={`/requests/${n.requestId}`}
-                    className="font-semibold text-brand-700 hover:underline"
+                    className="-my-2 inline-flex min-h-11 items-center font-semibold text-brand-700 hover:underline"
                   >
                     {t("viewRequest")}
                   </Link>
@@ -118,7 +118,7 @@ export default async function NotificationsPage() {
                 {n.readAt === null && (
                   <form action={markNotificationRead}>
                     <input type="hidden" name="id" value={n.id} />
-                    <button className="font-semibold text-steel-500 hover:text-steel-900 hover:underline">
+                    <button className="-my-2 inline-flex min-h-11 items-center font-semibold text-steel-500 hover:text-steel-900 hover:underline">
                       {t("markRead")}
                     </button>
                   </form>

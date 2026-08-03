@@ -87,7 +87,10 @@ export default async function RequestDetailPage({
 
   return (
     <div>
-      <Link href="/admin/requests" className="text-sm text-brand-700 hover:underline">
+      <Link
+        href="/admin/requests"
+        className="-ms-2 inline-flex min-h-11 items-center rounded-lg px-2 text-sm text-brand-700 hover:bg-steel-100 hover:underline"
+      >
         ← {t("backToQueue")}
       </Link>
 

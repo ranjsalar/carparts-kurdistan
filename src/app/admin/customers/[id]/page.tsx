@@ -65,7 +65,10 @@ export default async function AdminCustomerDetailPage({
       {success && (
         <SuccessDialog messageKey={success} redirectTo={`/admin/customers/${id}`} />
       )}
-      <Link href="/admin/customers" className="text-sm text-brand-700 hover:underline">
+      <Link
+        href="/admin/customers"
+        className="-ms-2 inline-flex min-h-11 items-center rounded-lg px-2 text-sm text-brand-700 hover:bg-steel-100 hover:underline"
+      >
         ← {t("backToList")}
       </Link>
 

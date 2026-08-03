@@ -66,7 +66,7 @@ export function NotificationBell({
     <Link
       href="/notifications"
       aria-label={label}
-      className="relative rounded-lg p-2 text-steel-500 transition-colors hover:bg-steel-100 hover:text-steel-900"
+      className="relative flex h-11 w-11 items-center justify-center rounded-lg text-steel-500 transition-colors hover:bg-steel-100 hover:text-steel-900"
     >
       <IconBell size={20} />
       {count > 0 && (

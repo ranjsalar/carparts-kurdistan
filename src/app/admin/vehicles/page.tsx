@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { yearLabel } from "@/lib/years";
@@ -6,21 +7,37 @@ import { addBrand, addModel, addYearRange, deleteBrand, deleteModel, deleteYearR
 export default async function VehiclesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; model?: string }>;
 }) {
   const t = await getTranslations("admin.taxonomy");
   const te = await getTranslations("errors");
-  const { error } = await searchParams;
+  const { error, model: expandedModelId } = await searchParams;
   const errorKey = error === "in-use" ? "inUse" : error === "bad-years" ? "badYears" : "generic";
-  const brands = await prisma.brand.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      models: {
-        orderBy: { name: "asc" },
-        include: { yearRanges: { orderBy: { startYear: "asc" } } },
-      },
-    },
-  });
+  /*
+    Years are stored one row per model year, so eagerly rendering them put ~1,900
+    chips (and a delete form each) into the DOM — several megabytes of HTML and
+    seconds of layout on a tablet. The list now shows an aggregate per model and
+    loads the individual years only for the model being edited.
+  */
+  const [brands, yearStats] = await Promise.all([
+    prisma.brand.findMany({
+      orderBy: { name: "asc" },
+      include: { models: { orderBy: { name: "asc" }, select: { id: true, name: true } } },
+    }),
+    prisma.yearRange.groupBy({
+      by: ["carModelId"],
+      _count: { _all: true },
+      _min: { startYear: true },
+      _max: { endYear: true },
+    }),
+  ]);
+  const statsByModel = new Map(yearStats.map((s) => [s.carModelId, s]));
+  const expandedYears = expandedModelId
+    ? await prisma.yearRange.findMany({
+        where: { carModelId: expandedModelId },
+        orderBy: { startYear: "asc" },
+      })
+    : [];
 
   return (
     <div>
@@ -89,45 +106,70 @@ export default async function VehiclesPage({
                         </button>
                       </form>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {model.yearRanges.map((yr) => (
-                        <span
-                          key={yr.id}
-                          className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-overline text-steel-700 ring-1 ring-steel-200"
+                    {expandedModelId === model.id ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {expandedYears.map((yr) => (
+                          <span
+                            key={yr.id}
+                            className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-overline text-steel-700 ring-1 ring-steel-200"
+                          >
+                            {yearLabel(yr)}
+                            <form action={deleteYearRange}>
+                              <input type="hidden" name="id" value={yr.id} />
+                              <button
+                                className="flex h-8 w-8 items-center justify-center text-danger-600 hover:text-danger-700"
+                                aria-label={t("delete")}
+                              >
+                                ✕
+                              </button>
+                            </form>
+                          </span>
+                        ))}
+                        <form action={addYearRange} className="flex flex-wrap items-center gap-1">
+                          <input type="hidden" name="carModelId" value={model.id} />
+                          <input
+                            name="startYear"
+                            required
+                            type="number"
+                            placeholder={t("yearFrom")}
+                            className="w-20 rounded-lg border border-steel-300 px-2 py-2 text-overline text-steel-900"
+                          />
+                          <input
+                            name="endYear"
+                            type="number"
+                            placeholder={t("yearTo")}
+                            className="w-20 rounded-lg border border-steel-300 px-2 py-2 text-overline text-steel-900"
+                          />
+                          <button className="inline-flex min-h-11 items-center rounded-lg border border-steel-300 px-3 text-overline text-steel-600 hover:bg-steel-100">
+                            {t("addYears")}
+                          </button>
+                          <span className="text-overline text-steel-400">{t("addYearsHint")}</span>
+                        </form>
+                        <Link
+                          href="/admin/vehicles"
+                          className="inline-flex min-h-11 items-center px-2 text-overline font-semibold text-brand-700 hover:underline"
                         >
-                          {yearLabel(yr)}
-                          <form action={deleteYearRange}>
-                            <input type="hidden" name="id" value={yr.id} />
-                            <button
-                              className="text-danger-600 hover:text-danger-700"
-                              aria-label={t("delete")}
-                            >
-                              ✕
-                            </button>
-                          </form>
+                          {t("collapseYears")}
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <span className="text-overline text-steel-600" dir="ltr">
+                          {statsByModel.get(model.id)
+                            ? `${statsByModel.get(model.id)!._min.startYear}–${statsByModel.get(model.id)!._max.endYear}`
+                            : "—"}
                         </span>
-                      ))}
-                      <form action={addYearRange} className="flex items-center gap-1">
-                        <input type="hidden" name="carModelId" value={model.id} />
-                        <input
-                          name="startYear"
-                          required
-                          type="number"
-                          placeholder={t("yearFrom")}
-                          className="w-20 rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-900"
-                        />
-                        <input
-                          name="endYear"
-                          type="number"
-                          placeholder={t("yearTo")}
-                          className="w-20 rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-900"
-                        />
-                        <button className="rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-600 hover:bg-steel-100">
-                          {t("addYears")}
-                        </button>
-                        <span className="text-overline text-steel-400">{t("addYearsHint")}</span>
-                      </form>
-                    </div>
+                        <span className="text-overline text-steel-400">
+                          {t("yearCount", { count: statsByModel.get(model.id)?._count._all ?? 0 })}
+                        </span>
+                        <Link
+                          href={`/admin/vehicles?model=${model.id}`}
+                          className="inline-flex min-h-11 items-center px-2 text-overline font-semibold text-brand-700 hover:underline"
+                        >
+                          {t("manageYears")}
+                        </Link>
+                      </div>
+                    )}
                   </li>
                 ))}
                 {brand.models.length === 0 && (

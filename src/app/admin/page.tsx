@@ -81,7 +81,7 @@ export default async function AdminDashboard() {
     <div>
       <h1 className="mb-7 text-title font-bold text-steel-900">{t("title")}</h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         {stats.map((s, i) => (
           <div
             key={s.label}

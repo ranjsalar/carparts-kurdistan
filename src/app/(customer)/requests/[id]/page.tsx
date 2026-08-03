@@ -134,7 +134,7 @@ export default async function CustomerRequestDetailPage({
       {flags.success && <SuccessDialog messageKey={flags.success} redirectTo="/requests" />}
       <Link
         href="/requests"
-        className="font-heading text-caption font-semibold text-brand-700 hover:underline"
+        className="-ms-2 inline-flex min-h-11 items-center rounded-lg px-2 font-heading text-caption font-semibold text-brand-700 hover:bg-steel-100 hover:underline"
       >
         ← {t("back")}
       </Link>
@@ -241,13 +241,13 @@ export default async function CustomerRequestDetailPage({
           <div className="mt-5 flex gap-3">
             <form action={approveQuoteAction} className="flex-1">
               <input type="hidden" name="requestId" value={request.id} />
-              <SubmitButton className="w-full rounded-lg bg-accent-600 py-2.5 font-heading text-sm font-bold text-white transition-colors hover:bg-accent-700">
+              <SubmitButton className="min-h-11 w-full rounded-lg bg-accent-600 py-3 font-heading text-sm font-bold text-white transition-colors hover:bg-accent-700">
                 {t("approve")}
               </SubmitButton>
             </form>
             <form action={rejectQuoteAction} className="flex-1">
               <input type="hidden" name="requestId" value={request.id} />
-              <SubmitButton className="w-full rounded-lg border border-white/25 py-2.5 font-heading text-sm font-semibold text-white transition-colors hover:bg-white/10">
+              <SubmitButton className="min-h-11 w-full rounded-lg border border-white/25 py-3 font-heading text-sm font-semibold text-white transition-colors hover:bg-white/10">
                 {t("reject")}
               </SubmitButton>
             </form>

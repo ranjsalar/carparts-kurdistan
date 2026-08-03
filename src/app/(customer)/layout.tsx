@@ -24,11 +24,17 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3.5">
           <div className="flex flex-wrap items-center gap-x-7 gap-y-1">
             <Logo />
-            <nav className="flex gap-5 font-heading text-caption font-semibold text-steel-600">
-              <Link href="/request" className="transition-colors hover:text-brand-700">
+            <nav className="-my-2 flex gap-1 font-heading text-caption font-semibold text-steel-600 sm:gap-3">
+              <Link
+                href="/request"
+                className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-steel-100 hover:text-brand-700"
+              >
                 {t("nav.newRequest")}
               </Link>
-              <Link href="/requests" className="transition-colors hover:text-brand-700">
+              <Link
+                href="/requests"
+                className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-steel-100 hover:text-brand-700"
+              >
                 {t("nav.myRequests")}
               </Link>
             </nav>

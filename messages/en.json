@@ -576,7 +576,10 @@
       "priceMin": "Min",
       "priceMax": "Max",
       "priceRangeSet": "Save",
-      "addYearsHint": "Adds each year individually"
+      "addYearsHint": "Adds each year individually",
+      "manageYears": "Manage years",
+      "collapseYears": "Done",
+      "yearCount": "{count} years"
     },
     "detail": {
       "backToQueue": "Back to queue",

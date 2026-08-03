@@ -576,7 +576,10 @@
       "priceMin": "کەمترین",
       "priceMax": "زۆرترین",
       "priceRangeSet": "پاشەکەوت",
-      "addYearsHint": "هەر ساڵێک بە جیا زیاد دەکات"
+      "addYearsHint": "هەر ساڵێک بە جیا زیاد دەکات",
+      "manageYears": "بەڕێوەبردنی ساڵەکان",
+      "collapseYears": "تەواو",
+      "yearCount": "{count} ساڵ"
     },
     "detail": {
       "backToQueue": "گەڕانەوە بۆ لیست",

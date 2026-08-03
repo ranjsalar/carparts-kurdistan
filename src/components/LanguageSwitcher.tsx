@@ -41,7 +41,7 @@ export function LanguageSwitcher({ tone = "dark" }: { tone?: "dark" | "light" })
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`inline-flex items-center gap-1.5 rounded-lg border bg-transparent px-2.5 py-1.5 font-heading text-caption font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${trigger}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg border bg-transparent px-2.5 py-2.5 font-heading text-caption font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${trigger}`}
       >
         {/* globe */}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

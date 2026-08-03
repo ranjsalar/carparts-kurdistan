@@ -179,8 +179,12 @@ export default async function PartsPage({
                         placeholder={t("partPlaceholder")}
                         className="w-56 rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-900"
                       />
-                      <label className="flex items-center gap-1 text-overline text-steel-600">
-                        <input type="checkbox" name="requiresColorCode" />
+                      <label className="flex min-h-11 cursor-pointer items-center gap-2 py-2 text-overline text-steel-600">
+                        <input
+                          type="checkbox"
+                          name="requiresColorCode"
+                          className="h-5 w-5 accent-brand-600"
+                        />
                         {t("needsColor")}
                       </label>
                       <button className="rounded-lg border border-steel-300 px-2 py-1 text-overline text-steel-600 hover:bg-steel-100">

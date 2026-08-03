@@ -93,7 +93,7 @@ export default async function MyRequestsPage({
                   </p>
                   <Link
                     href={`/requests/${r.id}`}
-                    className="font-heading text-caption font-bold text-accent-700 hover:underline"
+                    className="-my-2 inline-flex min-h-11 items-center font-heading text-caption font-bold text-accent-700 hover:underline"
                   >
                     {t("reviewApprove")} →
                   </Link>
