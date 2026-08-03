@@ -58,13 +58,24 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = t("title");
   const description = t("description");
   // Social platforms handle PNG link previews far more reliably than SVG, so
-  // the share image is the raster export rather than the vector lockup. It is
-  // the supplied 840×200 header artwork — a wide banner rather than the 1.91:1
-  // card most platforms crop to, so previews will letterbox it rather than
-  // fill the card.
-  const image = { url: "/brand/kalaryparts-logo-header-2x.png", width: 840, height: 200 };
+  // the share image is a raster export rather than the vector lockup. It is
+  // 1200×630 — the 1.91:1 card Facebook, LinkedIn and X all crop to — so the
+  // preview fills the card instead of letterboxing, and 1200 wide covers
+  // retina timelines. Regenerate it from the full lockup on brand-900 if the
+  // artwork changes; the supplied 840×200 header PNG is the wrong shape.
+  const image = {
+    url: "/brand/kalaryparts-og.png",
+    width: 1200,
+    height: 630,
+    alt: "KalaryParts — any part, any car",
+  };
 
   return {
+    // og:image must be an absolute URL — crawlers have no page context to
+    // resolve a relative one against. Without a metadataBase Next falls back
+    // to localhost, which every crawler fails to fetch, so previews come back
+    // blank. Set NEXT_PUBLIC_SITE_URL to the public origin at deploy time.
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     title,
     description,
     openGraph: { title, description, siteName: "KalaryParts", images: [image], type: "website" },
