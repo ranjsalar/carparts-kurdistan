@@ -7,6 +7,7 @@ import { IconBell } from "@/components/icons";
 import { SubmitButton } from "@/components/SubmitButton";
 import { btnSecondary } from "@/components/ui";
 import { markAllNotificationsRead, markNotificationRead } from "./actions";
+import { MarkViewedOnMount } from "./MarkViewedOnMount";
 
 export default async function NotificationsPage() {
   const user = await getSessionUser();
@@ -58,6 +59,10 @@ export default async function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      {/* Viewing the page is what marks these read. The button below stays as
+          the fallback for a browser with JavaScript disabled, where the mount
+          effect never runs. */}
+      <MarkViewedOnMount hasUnread={hasUnread} />
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-bold text-steel-900">{t("title")}</h1>
         {hasUnread && (

@@ -1,6 +1,6 @@
 {
   "common": {
-    "brand": "KalaryParts",
+    "brand": "KalaryCarPart",
     "back": "Back",
     "continue": "Continue",
     "logout": "Log out",
@@ -68,10 +68,10 @@
     "whatsapp": "WhatsApp",
     "instagram": "Instagram",
     "facebook": "Facebook",
-    "rights": "© {year} KalaryParts. All rights reserved."
+    "rights": "© {year} KalaryCarPart. All rights reserved."
   },
   "meta": {
-    "title": "KalaryParts — any part, any car, delivered in Kurdistan",
+    "title": "KalaryCarPart — any part, any car, delivered in Kurdistan",
     "description": "Request any part for any car in Kurdistan. Approve the price before paying and track your order from China or Dubai to your door."
   },
   "errors": {
@@ -308,7 +308,16 @@
     "partialConfirmed": "We confirmed ${amount}. ${remaining} remaining — pay it below whenever you're ready.",
     "rejectedTitle": "Your last payment wasn't confirmed",
     "rejectedRetry": "Please submit a new payment below.",
-    "placeholderWarning": "⚠ Placeholder account — the business hasn't entered real payment details yet."
+    "placeholderWarning": "⚠ Placeholder account — the business hasn't entered real payment details yet.",
+    "summaryFirstHalf": "Paying half now",
+    "summaryFirstFull": "Paying in full",
+    "summaryRemainder": "Paying your remaining balance",
+    "summaryOfTotal": "of ${total} total",
+    "summaryClearsBalance": "This clears your balance",
+    "summaryLeaves": "${amount} left after this",
+    "stepProgress": "Payment steps",
+    "senderPrefilled": "Filled in from your account — change it if someone else is sending.",
+    "submitting": "Sending your payment details…"
   },
   "tracking": {
     "title": "Order tracking",
@@ -460,7 +469,7 @@
       },
       "shipmentCompleted": {
         "title": "Order completed",
-        "body": "Your {part} order is complete. Thanks for using KalaryParts!"
+        "body": "Your {part} order is complete. Thanks for using KalaryCarPart!"
       },
       "noteSuffix": "Note: {note}"
     }
@@ -498,7 +507,22 @@
       "rejectedBanner": "Payment rejected — the customer has been notified.",
       "status_PENDING_CONFIRMATION": "Pending",
       "status_CONFIRMED": "Confirmed",
-      "status_REJECTED": "Rejected"
+      "status_REJECTED": "Rejected",
+      "searchLabel": "Find a customer",
+      "searchPlaceholder": "Name or phone",
+      "sortLabel": "Sort by",
+      "sort": {
+        "oldest": "Waiting longest",
+        "newest": "Newest first",
+        "amountDesc": "Amount, high to low",
+        "amountAsc": "Amount, low to high",
+        "customer": "Customer name"
+      },
+      "applyFilters": "Apply",
+      "clearFilters": "Clear",
+      "showingCount": "Showing {shown} of {total} pending",
+      "noMatches": "No pending payments match this search.",
+      "confirmArmed": "Confirm ${amount}?"
     },
     "settings": {
       "navTitle": "Settings",
@@ -620,7 +644,8 @@
       "waitingMethod": "Customer approved the quote — waiting for them to choose a payment method.",
       "confirmHint": "Only confirm once the money is actually in hand/account.",
       "advanceHint": "Statuses advance one step at a time and can't be undone, so update only when the stage is really reached.",
-      "notePlaceholder": "e.g. cleared customs, 3–5 days to warehouse"
+      "notePlaceholder": "e.g. cleared customs, 3–5 days to warehouse",
+      "recentValues": "Recent:"
     },
     "customers": {
       "navTitle": "Customers",
@@ -710,8 +735,8 @@
     "backHome": "Back to home"
   },
   "about": {
-    "title": "About KalaryParts",
-    "p1": "KalaryParts connects drivers across Kurdistan with hard-to-find car parts. Tell us your car and the part you need — we source it, usually from China or Dubai, and send you a price before anything is charged.",
+    "title": "About KalaryCarPart",
+    "p1": "KalaryCarPart connects drivers across Kurdistan with hard-to-find car parts. Tell us your car and the part you need — we source it, usually from China or Dubai, and send you a price before anything is charged.",
     "p2": "We don't stock parts on a shelf. Every request is sourced individually, so we can cover any brand, model, or year — not just what happens to be in stock.",
     "p3": "You approve the price, choose how to pay, and track your order until it arrives."
   },
@@ -755,7 +780,7 @@
     "sections": [
       {
         "h": "The service",
-        "b": "KalaryParts is a quote-request platform, not a live catalog with fixed prices. Submitting a request does not create a binding order — an order is only confirmed once you approve a quote and complete payment."
+        "b": "KalaryCarPart is a quote-request platform, not a live catalog with fixed prices. Submitting a request does not create a binding order — an order is only confirmed once you approve a quote and complete payment."
       },
       {
         "h": "Quotes",

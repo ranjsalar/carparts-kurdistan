@@ -304,8 +304,16 @@ export default async function CustomerRequestDetailPage({
               <PaymentFlow
                 requestId={request.id}
                 isFirstPayment={payState.isFirstPayment}
-                amounts={{ total: payState.total, half: payState.half, remaining: payState.remaining }}
+                amounts={{
+                  total: payState.total,
+                  half: payState.half,
+                  remaining: payState.remaining,
+                  confirmed: payState.confirmed,
+                }}
                 receivingAccounts={receivingMap}
+                // Sender details default to the account on file rather than
+                // being retyped for every payment.
+                customer={{ name: user.name, phone: user.phone ?? null }}
               />
             )}
           </div>

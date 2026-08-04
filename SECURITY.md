@@ -1,4 +1,4 @@
-# Security Notes — KalaryParts
+# Security Notes — KalaryCarPart
 
 Last hardening pass: 2026-08-03 (rate limiting + attack detection). This
 summarizes what is handled in the code, what is deliberately deferred, and what
@@ -156,7 +156,7 @@ Named so nobody assumes coverage that does not exist:
 3. **Database**: don't expose Postgres publicly (bind to localhost or a
    private network; the dev `docker-compose.yml` maps it to host port 5433).
    Set up automated backups.
-4. **Seeded admin account**: change or delete `admin@kalaryparts.local`
+4. **Seeded admin account**: change or delete `admin@kalarycarpart.local`
    (password `admin1234`) before production; create real admin accounts with
    strong passwords.
 5. **Test data**: wipe the dev test customer (+9647501234567) and its

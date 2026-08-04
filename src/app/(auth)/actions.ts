@@ -51,6 +51,28 @@ function isLocked(user: { lockedUntil: Date | null }) {
   return user.lockedUntil !== null && user.lockedUntil > new Date();
 }
 
+/**
+ * Where a customer lands after signing in.
+ *
+ * If anything is waiting unread — a quote, a payment confirmation, a shipment
+ * update — that is the most important thing on their screen, so they go
+ * straight to it rather than to a home page that only hints at it with a
+ * badge. Deliberately evaluated ONLY here, at the sign-in moment: putting this
+ * in a layout or the proxy would drag someone back to notifications every time
+ * they navigated, which would be infuriating.
+ */
+async function customerLandingPath(userId: string): Promise<string> {
+  try {
+    const unread = await prisma.notification.count({
+      where: { userId, readAt: null },
+    });
+    return unread > 0 ? "/notifications" : "/";
+  } catch {
+    // Never block a successful sign-in over the landing decision.
+    return "/";
+  }
+}
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -117,7 +139,7 @@ export async function login(formData: FormData) {
   }
 
   await createSession({ userId: user.id, role: user.role });
-  redirect("/");
+  redirect(await customerLandingPath(user.id));
 }
 
 // Phone format is validated by normalizePhone() below (shared with the OTP
@@ -273,5 +295,7 @@ export async function verifyPhoneOtp(
   }
 
   await createSession({ userId: user.id, role: user.role });
-  redirect(user.role === "ADMIN" ? "/admin" : "/");
+  // Same landing rule as the email path — signing in by phone is still a
+  // sign-in moment.
+  redirect(user.role === "ADMIN" ? "/admin" : await customerLandingPath(user.id));
 }

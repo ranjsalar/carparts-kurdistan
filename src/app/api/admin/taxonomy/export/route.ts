@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const format = params.get("format") === "json" ? "json" : "csv";
   const rows = await exportTaxonomy(type);
   const stamp = new Date().toISOString().slice(0, 10);
-  const filename = `kalaryparts-${type}-${stamp}.${format}`;
+  const filename = `kalarycarpart-${type}-${stamp}.${format}`;
 
   const body = format === "json" ? JSON.stringify(rows, null, 2) : toCsv(HEADERS[type], rows);
   return new NextResponse(body, {

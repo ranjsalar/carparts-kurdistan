@@ -2,20 +2,22 @@ import Link from "next/link";
 import Image from "next/image";
 
 /*
-  The KalaryParts lockup is a supplied asset, not drawn in code. It ships in
-  four files — two variants × two ink colours:
+  The KalaryCarPart lockup, as static assets rather than markup drawn here.
 
-    variant "wordmark"  mark + name, no tagline. Used in headers, where the
-                        supplied tagline would render around 4px tall and read
-                        as a smudge. Its viewBox is cropped to the artwork's
-                        real bounds, so at a given header height the name sets
-                        about a quarter larger than the full lockup would.
-    variant "full"      the complete lockup including "ANY PART · ANY CAR",
-                        used where there is room for it to be legible: the
-                        footer, and the social share image.
+  The K mark, its orange dot, the colours and the construction are the supplied
+  artwork unchanged; only the wordmark text was re-set when the product was
+  renamed from KalaryParts. Both variants share one viewBox cropped to the
+  artwork's measured bounds (getBBox, not estimated), so the name sets at the
+  same size in either:
 
-  Ink: the supplied artwork is white, for dark surfaces. The "-onlight" files
-  are the same geometry with the ink darkened, for the white customer, auth and
+    variant "wordmark"  mark + name, no tagline. Used in every header — at
+                        header sizes the tagline renders about 4px tall and
+                        reads as a smudge.
+    variant "full"      adds "ANY PART · ANY CAR", for the places with room to
+                        make it legible: the footer and the social share image.
+
+  Ink: the base artwork is white, for dark surfaces. The "-onlight" files are
+  the same geometry with the ink darkened, for the white customer, auth and
   marketing headers.
 
   The artwork is never mirrored in RTL — a logo is fixed artwork — but its
@@ -23,14 +25,16 @@ import Image from "next/image";
 */
 const SOURCES = {
   wordmark: {
-    dark: "/brand/kalaryparts-wordmark-onlight.svg", // dark ink, light surface
-    light: "/brand/kalaryparts-wordmark.svg", // white ink, dark surface
-    ratio: 286 / 81,
+    dark: "/brand/kalarycarpart-wordmark-onlight.svg", // dark ink, light surface
+    light: "/brand/kalarycarpart-wordmark.svg", // white ink, dark surface
+    ratio: 324 / 81,
   },
   full: {
-    dark: "/brand/kalaryparts-logo-onlight.svg",
-    light: "/brand/kalaryparts-logo.svg",
-    ratio: 420 / 100,
+    dark: "/brand/kalarycarpart-logo-onlight.svg",
+    light: "/brand/kalarycarpart-logo.svg",
+    // Same box as the wordmark: the tagline sits inside the name's bounds, so
+    // both crop identically and the name sets at one consistent size.
+    ratio: 324 / 81,
   },
 } as const;
 
@@ -58,7 +62,7 @@ export function Logo({
     <Link href={href} className="inline-flex shrink-0 items-center">
       <Image
         src={source[tone]}
-        alt="KalaryParts"
+        alt="KalaryCarPart"
         width={Math.round(height * source.ratio)}
         height={height}
         priority={priority}

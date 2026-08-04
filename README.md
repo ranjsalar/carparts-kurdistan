@@ -1,4 +1,4 @@
-# KalaryParts
+# KalaryCarPart
 
 A web platform for ordering car parts in Kurdistan, Iraq — for any brand, any model, any year.
 

@@ -64,10 +64,10 @@ export async function generateMetadata(): Promise<Metadata> {
   // retina timelines. Regenerate it from the full lockup on brand-900 if the
   // artwork changes; the supplied 840×200 header PNG is the wrong shape.
   const image = {
-    url: "/brand/kalaryparts-og.png",
+    url: "/brand/kalarycarpart-og.png",
     width: 1200,
     height: 630,
-    alt: "KalaryParts — any part, any car",
+    alt: "KalaryCarPart — any part, any car",
   };
 
   return {
@@ -78,7 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     title,
     description,
-    openGraph: { title, description, siteName: "KalaryParts", images: [image], type: "website" },
+    openGraph: { title, description, siteName: "KalaryCarPart", images: [image], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: [image.url] },
   };
 }

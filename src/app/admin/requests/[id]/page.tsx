@@ -9,6 +9,7 @@ import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
 import { renderTimelineNote, type TimelineContext } from "@/lib/timeline";
 import { nextShipmentStatus } from "@/lib/shipments";
+import { getQuoteSuggestions } from "@/lib/quote-suggestions";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
@@ -263,6 +264,7 @@ export default async function RequestDetailPage({
                   delivery: request.priceDeliveryUsd?.toString() ?? "",
                   notes: request.quoteNotes ?? "",
                 }}
+                suggestions={await getQuoteSuggestions()}
               />
             ) : (
               <p className="text-sm text-steel-500">{t("notQuotable")}</p>

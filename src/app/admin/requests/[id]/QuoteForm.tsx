@@ -15,6 +15,7 @@ export function QuoteForm({
   requestId,
   isUpdate,
   defaults,
+  suggestions,
 }: {
   requestId: string;
   isUpdate: boolean;
@@ -26,6 +27,8 @@ export function QuoteForm({
     delivery: string;
     notes: string;
   };
+  /** Recently used shipping/tax figures — offered, never applied. */
+  suggestions: { shipping: string[]; tax: string[] };
 }) {
   const t = useTranslations("admin.detail");
   const [part, setPart] = useState(defaults.part);
@@ -41,10 +44,16 @@ export function QuoteForm({
   const total = Number.isNaN(totalCents) ? null : (totalCents / 100).toFixed(2);
 
   const money = [
-    { name: "pricePartUsd", label: t("partPrice"), value: part, set: setPart, required: true },
-    { name: "priceShippingUsd", label: t("shippingCost"), value: shipping, set: setShipping },
-    { name: "priceTaxUsd", label: t("taxCost"), value: tax, set: setTax },
-    { name: "priceDeliveryUsd", label: t("deliveryCost"), value: delivery, set: setDelivery },
+    { name: "pricePartUsd", label: t("partPrice"), value: part, set: setPart, required: true, chips: [] as string[] },
+    {
+      name: "priceShippingUsd",
+      label: t("shippingCost"),
+      value: shipping,
+      set: setShipping,
+      chips: suggestions.shipping,
+    },
+    { name: "priceTaxUsd", label: t("taxCost"), value: tax, set: setTax, chips: suggestions.tax },
+    { name: "priceDeliveryUsd", label: t("deliveryCost"), value: delivery, set: setDelivery, chips: [] as string[] },
   ];
 
   return (
@@ -87,6 +96,28 @@ export function QuoteForm({
             dir="ltr"
             className={inputBase}
           />
+          {/* Recent values, offered rather than applied — see
+              src/lib/quote-suggestions.ts for why these are not defaults. */}
+          {fieldDef.chips.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-overline text-steel-400">{t("recentValues")}</span>
+              {fieldDef.chips.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => fieldDef.set(c)}
+                  className={`rounded-full px-2.5 py-1 font-heading text-overline font-semibold transition-colors ${
+                    fieldDef.value === c
+                      ? "bg-brand-700 text-white"
+                      : "bg-steel-100 text-steel-700 hover:bg-brand-100 hover:text-brand-800"
+                  }`}
+                  dir="ltr"
+                >
+                  ${c}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
