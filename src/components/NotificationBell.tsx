@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { IconBell } from "@/components/icons";
 import { useUnreadCount } from "./UnreadCount";
 
@@ -19,12 +20,14 @@ export function NotificationBell({
   initialCount: number;
   label: string;
 }) {
+  const t = useTranslations("nav");
   const count = useUnreadCount(initialCount);
 
   return (
     <Link
       href="/notifications"
-      aria-label={count > 0 ? `${label} (${count} unread)` : label}
+      // Translated, not interpolated English — see NotificationsNavLink.
+      aria-label={count > 0 ? `${label} — ${t("unreadBadge", { count })}` : label}
       className="relative flex h-11 w-11 items-center justify-center rounded-lg text-steel-500 transition-colors hover:bg-steel-100 hover:text-steel-900"
     >
       <IconBell size={20} />

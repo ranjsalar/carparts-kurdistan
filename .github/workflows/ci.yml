@@ -1,0 +1,121 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  CI — quality gate. NOT the deployment.
+#
+#  This workflow verifies; it does not ship. Railway is connected to this
+#  repository and deploys main automatically on push, so there is deliberately
+#  no deploy step here — adding one would mean two systems racing to deploy the
+#  same commit.
+#
+#  What that means in practice:
+#    • GitHub Actions (this file) answers "is this commit sound?"
+#    • Railway answers "put it live", on its own, from main.
+#
+#  A red X here does NOT block Railway on its own. Turn on branch protection
+#  requiring this check to pass, and merge through pull requests, so broken
+#  commits never reach main in the first place. See README → CI/CD.
+# ─────────────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  # Every push, on any branch, so problems surface before a pull request exists.
+  push:
+  # Plus pull requests aimed at main — the gate that matters before release.
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch makes the previous run irrelevant. Cancelling
+# it keeps feedback fast and avoids paying for work nobody will read.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Type-check, lint, translations, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # A real Postgres, not a mock. Prisma needs a reachable database to apply
+    # migrations, and anything that touches the database during the build has
+    # to hit something real or the check is theatre.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: carparts
+          POSTGRES_PASSWORD: carparts
+          POSTGRES_DB: carparts
+        ports:
+          - 5432:5432
+        # Steps must not start until Postgres answers; without this the first
+        # Prisma command races the container and fails intermittently.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Service containers are reachable on localhost from the job. Port 5432
+      # here, unlike local development, which uses 5433 to avoid colliding with
+      # a native Postgres install.
+      DATABASE_URL: postgresql://carparts:carparts@localhost:5432/carparts
+      # Throwaway value. Real secrets live in the hosting platform; nothing in
+      # CI needs a genuine one, and a placeholder keeps module-load code that
+      # reads this from behaving differently here than in production.
+      JWT_SECRET: ci-only-not-a-real-secret-0000000000000000000000000000
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        # npm ci, not npm install: installs exactly the lockfile and fails if
+        # package.json and package-lock.json have drifted apart.
+        run: npm ci
+
+      - name: Generate Prisma client
+        # Required before type-checking: the client is generated into
+        # src/generated/prisma, which is gitignored, so it does not exist in a
+        # fresh checkout and every type that references it would fail.
+        run: npx prisma generate
+
+      - name: Apply database migrations
+        # Proves the migration history actually applies to an empty database —
+        # a hand-written migration that only ever ran locally would be caught
+        # here rather than on the production database.
+        run: npx prisma migrate deploy
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verify translation key parity
+        # Fails if en/ku/ar have drifted — a key added to English and forgotten
+        # in Kurdish or Arabic is a runtime error on a real page.
+        run: npx tsx keys-check.ts
+
+      - name: Production build
+        run: npm run build
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "### ✅ All checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "Type-check, lint, translation parity and production build are green." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "_Railway deploys main on its own; this workflow only verifies._" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "Open the failed step above for the full output." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -51,7 +51,8 @@
   "nav": {
     "newRequest": "طلب جديد",
     "myRequests": "طلباتي",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "unreadBadge": "{count} غير مقروءة"
   },
   "footer": {
     "company": "الشركة",

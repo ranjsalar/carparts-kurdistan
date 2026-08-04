@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated Prisma client:
     "src/generated/**",
+    // Gitignored one-off local scripts (see .gitignore). They never reach CI,
+    // so linting them locally only produces failures that cannot be reproduced
+    // there — `npm run lint` should mean the same thing in both places.
+    "local-*.ts",
   ]),
 ]);
 

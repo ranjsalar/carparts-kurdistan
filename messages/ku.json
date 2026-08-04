@@ -51,7 +51,8 @@
   "nav": {
     "newRequest": "داواکاری نوێ",
     "myRequests": "داواکارییەکانم",
-    "notifications": "ئاگادارکردنەوەکان"
+    "notifications": "ئاگادارکردنەوەکان",
+    "unreadBadge": "{count} نەخوێندراوە"
   },
   "footer": {
     "company": "کۆمپانیا",

@@ -1,5 +1,7 @@
 # KalaryCarPart
 
+[![CI](https://github.com/ranjsalar/carparts-kurdistan/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ranjsalar/carparts-kurdistan/actions/workflows/ci.yml)
+
 A web platform for ordering car parts in Kurdistan, Iraq — for any brand, any model, any year.
 
 Finding a specific replacement part here is harder than it should be. Local shops stock a narrow
@@ -226,6 +228,40 @@ npx prisma studio        # browse the database
 ```
 
 ---
+
+## CI/CD
+
+Two separate systems, and it is worth being precise about which does what — they
+are often conflated.
+
+| | Role |
+|---|---|
+| **GitHub Actions** (`.github/workflows/ci.yml`) | The quality gate. Answers "is this commit sound?" |
+| **Railway** | The deployment. Watches this repository and ships `main` on its own. |
+
+**The pipeline does not deploy anything.** Railway auto-deploys from GitHub once
+connected, so a deploy step here would mean two systems racing to release the
+same commit. CI verifies; Railway ships.
+
+Every push on any branch, and every pull request targeting `main`, runs:
+
+1. `npm ci` — installs exactly the lockfile, failing if it has drifted from `package.json`
+2. `npx prisma generate` — the client is gitignored, so a fresh checkout has no types without this
+3. `npx prisma migrate deploy` — against a real Postgres 16 service container, which proves the
+   migration history applies cleanly to an empty database rather than only to your laptop
+4. `npx tsc --noEmit` — type check
+5. `npm run lint` — ESLint
+6. `npx tsx keys-check.ts` — translation key parity across en/ku/ar
+7. `npm run build` — full production build
+
+All seven must pass. Any failure turns the run red, and the badge above tracks
+`main`.
+
+> [!IMPORTANT]
+> A red X does not block Railway by itself. To make this an actual gate rather
+> than a notification, enable branch protection on `main` (Settings → Branches)
+> requiring the **CI** check to pass, and merge through pull requests. Without
+> that, a direct push to `main` deploys whether CI is happy or not.
 
 ## Project status
 
