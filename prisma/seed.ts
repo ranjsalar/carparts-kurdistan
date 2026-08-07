@@ -265,7 +265,91 @@ const vehicles: Record<string, Record<string, [number, number][]>> = {
 };
 
 // "color" = requires paint color code
-type PartSeed = { name: string; nameKu: string; nameAr: string; color?: true };
+/*
+  Trim / grade levels for the highest-volume models in this market.
+
+  Curated from general product knowledge rather than any external source, and
+  deliberately partial: only models where the grade genuinely changes the part
+  (bumper trim, lights, sensors and body kit all differ between a Land Cruiser
+  GXR and a VXR). Models not listed simply offer no trim, which is fine — the
+  field is optional everywhere, and a customer who does not know their grade
+  can leave it blank or type it in the "not listed" box.
+
+  Names follow how they are actually sold in Iraq/Kurdistan (Gulf-spec grades
+  like GXR and VXR) rather than US or European marketing names.
+*/
+const trims: Record<string, Record<string, string[]>> = {
+  Toyota: {
+    "Land Cruiser": ["GXR", "VXR", "VX", "GX-R Sport", "GR Sport", "Limited"],
+    Prado: ["TX", "TXL", "VX", "VXR", "GX"],
+    Camry: ["GL", "SE", "LE", "XLE", "Grande", "Sport"],
+    Corolla: ["XLI", "GLI", "SE", "LE", "Elegance"],
+    Hilux: ["Base", "GL", "GLX", "Adventure", "SR5"],
+    RAV4: ["LE", "XLE", "Limited", "Adventure"],
+  },
+  Lexus: {
+    LX: ["LX 570", "LX 600", "F Sport", "VIP"],
+    RX: ["RX 350", "RX 450h", "F Sport", "Premier"],
+    GX: ["GX 460", "GX 550", "Premium"],
+  },
+  Nissan: {
+    Patrol: ["XE", "SE", "SE Platinum", "LE", "LE Platinum", "Nismo"],
+    Altima: ["S", "SV", "SL", "SR"],
+    "X-Trail": ["S", "SV", "SL"],
+  },
+  Hyundai: {
+    Elantra: ["GL", "GLS", "Smart", "Comfort", "Limited"],
+    Tucson: ["GL", "GLS", "Smart", "Comfort", "Limited"],
+    "Santa Fe": ["GL", "GLS", "Comfort", "Calligraphy"],
+    Sonata: ["GL", "GLS", "Smart", "Limited"],
+  },
+  Kia: {
+    Sportage: ["LX", "EX", "GT-Line", "Comfort"],
+    Sorento: ["LX", "EX", "SX", "GT-Line"],
+    "Optima / K5": ["LX", "EX", "GT-Line"],
+    Seltos: ["LX", "EX", "GT-Line"],
+  },
+  Ford: {
+    "F-150": ["XL", "XLT", "Lariat", "King Ranch", "Platinum", "Raptor", "Limited"],
+    Explorer: ["XLT", "Limited", "ST", "Platinum"],
+    Escape: ["S", "SE", "SEL", "Titanium"],
+  },
+  Chevrolet: {
+    Silverado: ["WT", "Custom", "LT", "RST", "LTZ", "High Country", "Trail Boss"],
+    Tahoe: ["LS", "LT", "RST", "Z71", "Premier", "High Country"],
+    Malibu: ["LS", "LT", "RS", "Premier"],
+  },
+  GMC: {
+    Sierra: ["Pro", "SLE", "Elevation", "SLT", "AT4", "Denali"],
+    Yukon: ["SLE", "SLT", "AT4", "Denali"],
+  },
+  Jeep: {
+    "Grand Cherokee": ["Laredo", "Limited", "Overland", "Summit", "Trailhawk", "SRT"],
+    Wrangler: ["Sport", "Sahara", "Rubicon", "Willys"],
+  },
+  Mitsubishi: {
+    Pajero: ["GLS", "GLX", "Exceed"],
+    L200: ["GL", "GLS", "GLX"],
+  },
+  BMW: {
+    "3 Series": ["320i", "330i", "M Sport", "M340i"],
+    X5: ["xDrive40i", "xDrive50i", "M Sport", "M50i"],
+  },
+  "Mercedes-Benz": {
+    "C-Class": ["C180", "C200", "C300", "AMG Line"],
+    "E-Class": ["E200", "E300", "E350", "AMG Line"],
+    "G-Class": ["G500", "G63 AMG"],
+  },
+};
+
+type PartSeed = {
+  name: string;
+  nameKu: string;
+  nameAr: string;
+  color?: true;
+  /** Body panels where "take-off / used / black grade" is a real choice. */
+  condition?: true;
+};
 type SubSeed = { name: string; nameKu: string; nameAr: string; parts: PartSeed[] };
 
 /*
@@ -357,8 +441,8 @@ const partTaxonomy: {
         nameKu: "بامپەرەکان",
         nameAr: "الصدامات",
         parts: [
-          { name: "Front Bumper", nameKu: "بامپەری پێشەوە", nameAr: "الصدام الأمامي", color: true },
-          { name: "Rear Bumper", nameKu: "بامپەری دواوە", nameAr: "الصدام الخلفي", color: true },
+          { name: "Front Bumper", nameKu: "بامپەری پێشەوە", nameAr: "الصدام الأمامي", color: true, condition: true },
+          { name: "Rear Bumper", nameKu: "بامپەری دواوە", nameAr: "الصدام الخلفي", color: true, condition: true },
         ],
       },
       {
@@ -366,7 +450,7 @@ const partTaxonomy: {
         nameKu: "بۆنیت",
         nameAr: "البونيت",
         parts: [
-          { name: "Hood", nameKu: "بۆنیت", nameAr: "البونيت", color: true },
+          { name: "Hood", nameKu: "بۆنیت", nameAr: "البونيت", color: true, condition: true },
           { name: "Hood Hinge", nameKu: "مەفسەلەی بۆنیت", nameAr: "مفصلة البونيت" },
         ],
       },
@@ -385,24 +469,28 @@ const partTaxonomy: {
             nameKu: "دەرگای سایەق",
             nameAr: "باب السائق",
             color: true,
+            condition: true,
           },
           {
             name: "Front Right Door",
             nameKu: "دەرگای سەکن",
             nameAr: "باب الراكب",
             color: true,
+            condition: true,
           },
           {
             name: "Rear Left Door",
             nameKu: "دەرگای پشتی سایەق",
             nameAr: "الباب الخلفي - جهة السائق",
             color: true,
+            condition: true,
           },
           {
             name: "Rear Right Door",
             nameKu: "دەرگای پشتی سەکن",
             nameAr: "الباب الخلفي - جهة الراكب",
             color: true,
+            condition: true,
           },
           { name: "Door Handle", nameKu: "دەسکی دەرگا", nameAr: "مقبض الباب", color: true },
         ],
@@ -453,6 +541,111 @@ const partTaxonomy: {
             nameAr: "المصباح الخلفي - جهة الراكب",
           },
           { name: "Fog Light", nameKu: "چرای تەم", nameAr: "مصباح الضباب" },
+          { name: "Rear Fog Light", nameKu: "چرای تەمی دواوە", nameAr: "مصباح الضباب الخلفي" },
+          {
+            name: "Front Turn Signal Light",
+            nameKu: "چرای سیگناڵی پێشەوە",
+            nameAr: "مصباح الإشارة الأمامي",
+          },
+          {
+            name: "Rear Turn Signal Light",
+            nameKu: "چرای سیگناڵی دواوە",
+            nameAr: "مصباح الإشارة الخلفي",
+          },
+          {
+            name: "Side Repeater Light",
+            nameKu: "چرای سیگناڵی تەنیشت",
+            nameAr: "مصباح الإشارة الجانبي",
+          },
+          {
+            name: "Daytime Running Light",
+            nameKu: "چرای ڕۆژانە",
+            nameAr: "مصباح النهار",
+          },
+          {
+            name: "Third Brake Light",
+            nameKu: "چرای بڕێکی سێیەم",
+            nameAr: "مصباح الفرامل الثالث",
+          },
+          { name: "Reverse Light", nameKu: "چرای دواکشانەوە", nameAr: "مصباح الرجوع" },
+          {
+            name: "License Plate Light",
+            nameKu: "چرای نومرە",
+            nameAr: "مصباح لوحة الأرقام",
+          },
+          {
+            name: "Headlight Glass / Lens",
+            nameKu: "شووشەی چرای پێشەوە",
+            nameAr: "زجاج المصباح الأمامي",
+          },
+          {
+            name: "Headlight Ballast / Control Module",
+            nameKu: "بالاستی چرای پێشەوە",
+            nameAr: "بالاست المصباح الأمامي",
+          },
+        ],
+      },
+      {
+        /*
+          Sensors, cameras and radar sit in their own sub-category rather than
+          under Lights. They are electronics, not lighting: a customer looking
+          for a parking sensor is not browsing for a bulb, and grouping them
+          together would bury both. Increasingly common on the newer vehicles
+          arriving in the market, and they are high-value parts worth quoting
+          precisely.
+
+          TRANSLATION NOTE: every Kurdish and Arabic name in this block is
+          best-effort and needs a native-speaker pass. Driver-assistance
+          vocabulary has no settled Kurdish equivalent yet — in practice people
+          borrow the English word ("سەنسەر", "ڕادار", "کامێرا"), which is what
+          these follow, but a local parts trader should confirm the wording.
+        */
+        name: "Sensors, Cameras & Radar",
+        nameKu: "سەنسەر، کامێرا و ڕادار",
+        nameAr: "الحساسات والكاميرات والرادار",
+        parts: [
+          {
+            name: "Front Parking Sensor",
+            nameKu: "سەنسەری پارکی پێشەوە",
+            nameAr: "حساس الركن الأمامي",
+          },
+          {
+            name: "Rear Parking Sensor",
+            nameKu: "سەنسەری پارکی دواوە",
+            nameAr: "حساس الركن الخلفي",
+          },
+          {
+            name: "Parking Sensor Control Module",
+            nameKu: "مۆدیوڵی کۆنترۆڵی سەنسەری پارک",
+            nameAr: "وحدة التحكم بحساسات الركن",
+          },
+          { name: "Reverse Camera", nameKu: "کامێرای دواکشانەوە", nameAr: "كاميرا الرجوع" },
+          { name: "Front Camera", nameKu: "کامێرای پێشەوە", nameAr: "الكاميرا الأمامية" },
+          {
+            name: "360° Surround View Camera",
+            nameKu: "کامێرای ٣٦٠ پلە",
+            nameAr: "كاميرا ٣٦٠ درجة",
+          },
+          {
+            name: "Blind Spot Radar Sensor",
+            nameKu: "سەنسەری ڕاداری خاڵی کوێر",
+            nameAr: "حساس رادار النقطة العمياء",
+          },
+          {
+            name: "Adaptive Cruise Control Radar",
+            nameKu: "ڕاداری کروزکۆنترۆڵی گونجاو",
+            nameAr: "رادار مثبت السرعة التكيفي",
+          },
+          {
+            name: "Lane Assist Camera",
+            nameKu: "کامێرای یارمەتیدەری هێڵی ڕێگا",
+            nameAr: "كاميرا مساعد المسار",
+          },
+          {
+            name: "Tyre Pressure Sensor (TPMS)",
+            nameKu: "سەنسەری پەستانی تایە",
+            nameAr: "حساس ضغط الإطارات",
+          },
         ],
       },
       {
@@ -703,6 +896,30 @@ async function main() {
   }
   console.log("Vehicle taxonomy seeded.");
 
+  // Trims, for the models where the grade actually changes which part fits.
+  // Upsert-only: a trim an admin has renamed or removed is never resurrected
+  // with different data, matching how the rest of this seed behaves.
+  let trimCount = 0;
+  for (const [brandName, models] of Object.entries(trims)) {
+    const brand = await prisma.brand.findUnique({ where: { name: brandName } });
+    if (!brand) continue;
+    for (const [modelName, names] of Object.entries(models)) {
+      const model = await prisma.carModel.findUnique({
+        where: { brandId_name: { brandId: brand.id, name: modelName } },
+      });
+      if (!model) continue;
+      for (const name of names) {
+        await prisma.trim.upsert({
+          where: { carModelId_name: { carModelId: model.id, name } },
+          update: {},
+          create: { carModelId: model.id, name },
+        });
+        trimCount++;
+      }
+    }
+  }
+  console.log(`Trim levels seeded (${trimCount}).`);
+
   let rangesApplied = 0;
   for (const cat of partTaxonomy) {
     const category = await prisma.category.upsert({
@@ -733,6 +950,7 @@ async function main() {
             nameKu: part.nameKu,
             nameAr: part.nameAr,
             requiresColorCode: part.color === true,
+            conditionApplies: part.condition === true,
           },
           create: {
             subCategoryId: sub.id,
@@ -740,6 +958,7 @@ async function main() {
             nameKu: part.nameKu,
             nameAr: part.nameAr,
             requiresColorCode: part.color === true,
+            conditionApplies: part.condition === true,
           },
         });
 

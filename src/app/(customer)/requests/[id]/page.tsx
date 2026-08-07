@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { yearLabel } from "@/lib/years";
+import { PART_CONDITION_KEY, partLabel, vehicleLabel } from "@/lib/request-display";
 import { computePaymentState, getReceivingAccounts, isPlaceholderAccount } from "@/lib/payments";
 import { renderTimelineNote, type TimelineContext } from "@/lib/timeline";
 import { SHIPMENT_STAGES } from "@/lib/shipments";
@@ -51,6 +51,7 @@ export default async function CustomerRequestDetailPage({
   const tt = await getTranslations("tracking");
   const te = await getTranslations("errors");
   const tl = await getTranslations("timeline");
+  const trf = await getTranslations("requestForm");
   const locale = await getLocale();
 
   const request = await prisma.partRequest.findUnique({
@@ -59,6 +60,7 @@ export default async function CustomerRequestDetailPage({
       brand: true,
       carModel: true,
       yearRange: true,
+      trim: true,
       part: true,
       statusLogs: { orderBy: { createdAt: "asc" } },
       payments: { orderBy: { createdAt: "desc" } },
@@ -66,10 +68,9 @@ export default async function CustomerRequestDetailPage({
   });
   if (!request || request.customerId !== user.id) notFound();
 
-  // Part name carries optional Kurdish/Arabic translations; fall back to English.
-  const localizedPartName =
-    (locale === "ku" ? request.part.nameKu : locale === "ar" ? request.part.nameAr : null) ??
-    request.part.name;
+  // Catalog part names are translated; a part the customer typed themselves
+  // is shown exactly as they wrote it.
+  const localizedPartName = partLabel(request, locale);
 
   // Timeline entries carry a noteKey so system messages render in the reader's
   // language; enum params are resolved to localized labels here.
@@ -163,7 +164,7 @@ export default async function CustomerRequestDetailPage({
 
       <section className={`${card} mb-5 p-5`}>
         <p className="text-body text-steel-700">
-          {request.brand.name} {request.carModel.name} ({yearLabel(request.yearRange)})
+          {vehicleLabel(request)}
           {request.colorCode && (
             <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
               {request.colorCode}
@@ -177,6 +178,14 @@ export default async function CustomerRequestDetailPage({
               {request.preferredSource === "CHINA"
                 ? `${t("sourceChina")} (${t("etaChina")})`
                 : `${t("sourceDubai")} (${t("etaDubai")})`}
+            </span>
+          </p>
+        )}
+        {request.partCondition && (
+          <p className="mt-2 text-caption text-steel-500">
+            {t("conditionLabel")}:{" "}
+            <span className="font-medium text-steel-700">
+              {trf(`condition.${PART_CONDITION_KEY[request.partCondition]}`)}
             </span>
           </p>
         )}

@@ -1,12 +1,25 @@
 import { prisma } from "./db";
 import { TIMELINE } from "./timeline";
-import type { SourceCountry } from "@/generated/prisma/enums";
+import { isPartCondition } from "./request-display";
+import type { PartCondition, SourceCountry } from "@/generated/prisma/enums";
 
+/*
+  Each vehicle/part level accepts EITHER a catalog id OR free text the customer
+  typed after choosing "Other — not listed". Empty string means "not provided",
+  which is how the form sends an unused branch.
+*/
 export type SubmitRequestInput = {
-  brandId: string;
-  carModelId: string;
-  yearRangeId: string;
-  partId: string;
+  brandId?: string;
+  carModelId?: string;
+  yearRangeId?: string;
+  trimId?: string;
+  partId?: string;
+  rawBrandText?: string;
+  rawModelText?: string;
+  rawYearText?: string;
+  rawTrimText?: string;
+  rawPartText?: string;
+  partCondition?: string;
   preferredSource?: string;
   colorCode?: string;
   /** Required: every request must arrive with context for the sourcing team. */
@@ -25,25 +38,66 @@ export async function submitPartRequest(
   customerId: string,
   input: SubmitRequestInput,
 ): Promise<SubmitRequestResult> {
-  const [model, yearRange, part] = await Promise.all([
-    prisma.carModel.findUnique({ where: { id: input.carModelId } }),
-    prisma.yearRange.findUnique({ where: { id: input.yearRangeId } }),
-    prisma.part.findUnique({ where: { id: input.partId } }),
+  const text = (v: string | undefined) => v?.trim() || null;
+
+  const rawBrandText = text(input.rawBrandText);
+  const rawModelText = text(input.rawModelText);
+  const rawYearText = text(input.rawYearText);
+  const rawTrimText = text(input.rawTrimText);
+  const rawPartText = text(input.rawPartText);
+
+  const [model, yearRange, trim, part] = await Promise.all([
+    input.carModelId ? prisma.carModel.findUnique({ where: { id: input.carModelId } }) : null,
+    input.yearRangeId ? prisma.yearRange.findUnique({ where: { id: input.yearRangeId } }) : null,
+    input.trimId ? prisma.trim.findUnique({ where: { id: input.trimId } }) : null,
+    input.partId ? prisma.part.findUnique({ where: { id: input.partId } }) : null,
   ]);
 
-  if (!model || model.brandId !== input.brandId) {
-    return { ok: false, error: "vehicleMismatch" };
+  // Each level needs exactly one of: a catalog row, or typed text. The
+  // database cannot express "one or the other", so it is enforced here — the
+  // form is not a security boundary.
+  if (!input.brandId && !rawBrandText) return { ok: false, error: "brandRequired" };
+  if (!input.carModelId && !rawModelText) return { ok: false, error: "modelRequired" };
+  if (!input.yearRangeId && !rawYearText) return { ok: false, error: "yearRequired" };
+  if (!input.partId && !rawPartText) return { ok: false, error: "partRequired" };
+
+  // Catalog selections must still hang together: a model has to belong to the
+  // chosen brand, a year to that model, a trim to that model.
+  if (input.carModelId) {
+    if (!model || model.brandId !== input.brandId) return { ok: false, error: "vehicleMismatch" };
   }
-  if (!yearRange || yearRange.carModelId !== model.id) {
-    return { ok: false, error: "vehicleMismatch" };
+  if (input.yearRangeId) {
+    if (!yearRange || !model || yearRange.carModelId !== model.id) {
+      return { ok: false, error: "vehicleMismatch" };
+    }
   }
-  if (!part) {
+  if (input.trimId) {
+    if (!trim || !model || trim.carModelId !== model.id) {
+      return { ok: false, error: "vehicleMismatch" };
+    }
+  }
+  if (input.partId && !part) {
     return { ok: false, error: "partNotFound" };
   }
 
   const colorCode = input.colorCode?.trim() || null;
-  if (part.requiresColorCode && !colorCode) {
+  // A typed part has no requiresColorCode flag to consult, so the colour step
+  // is only enforced for catalog parts.
+  if (part?.requiresColorCode && !colorCode) {
     return { ok: false, error: "colorRequired" };
+  }
+
+  // Condition is required for the body panels flagged for it, and rejected
+  // for anything else so a crafted submission cannot attach a meaningless
+  // condition to an oil filter.
+  let partCondition: PartCondition | null = null;
+  if (part?.conditionApplies) {
+    if (!isPartCondition(input.partCondition)) {
+      return { ok: false, error: "conditionRequired" };
+    }
+    partCondition = input.partCondition;
+  } else if (input.partCondition) {
+    return { ok: false, error: "conditionNotApplicable" };
   }
 
   // Notes are mandatory — checked server-side, not just in the form, since the
@@ -63,10 +117,17 @@ export async function submitPartRequest(
   const request = await prisma.partRequest.create({
     data: {
       customerId,
-      brandId: input.brandId,
-      carModelId: model.id,
-      yearRangeId: yearRange.id,
-      partId: part.id,
+      brandId: input.brandId || null,
+      carModelId: model?.id ?? null,
+      yearRangeId: yearRange?.id ?? null,
+      trimId: trim?.id ?? null,
+      partId: part?.id ?? null,
+      rawBrandText,
+      rawModelText,
+      rawYearText,
+      rawTrimText,
+      rawPartText,
+      partCondition,
       preferredSource,
       colorCode,
       notes,

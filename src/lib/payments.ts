@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { partLabel } from "./request-display";
 import { TIMELINE } from "./timeline";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
@@ -307,12 +308,12 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               type: "PAYMENT_CONFIRMED",
               templateKey: "paymentConfirmed",
               params: {
-                part: request.part.name,
-                brand: request.brand.name,
-                model: request.carModel.name,
+                part: partLabel(request),
+                brand: request.brand?.name ?? request.rawBrandText ?? "",
+                model: request.carModel?.name ?? request.rawModelText ?? "",
               },
               title: "Payment confirmed",
-              body: `We received your payment for the ${request.part.name} (${request.brand.name} ${request.carModel.name}). We're sourcing your part now.`,
+              body: `We received your payment for the ${partLabel(request)} (${request.brand?.name ?? request.rawBrandText ?? ""} ${request.carModel?.name ?? request.rawModelText ?? ""}). We're sourcing your part now.`,
             },
           });
         } else {
@@ -333,14 +334,14 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               type: "PAYMENT_CONFIRMED",
               templateKey: "paymentSourcingStarted",
               params: {
-                part: request.part.name,
-                brand: request.brand.name,
-                model: request.carModel.name,
+                part: partLabel(request),
+                brand: request.brand?.name ?? request.rawBrandText ?? "",
+                model: request.carModel?.name ?? request.rawModelText ?? "",
                 amount: amountStr,
                 remaining: remainingStr,
               },
               title: "Payment confirmed — sourcing started",
-              body: `Your payment of $${amountStr} is confirmed — we've started sourcing your ${request.part.name}. $${remainingStr} remaining, to be settled before delivery.`,
+              body: `Your payment of $${amountStr} is confirmed — we've started sourcing your ${partLabel(request)}. $${remainingStr} remaining, to be settled before delivery.`,
             },
           });
         }
@@ -368,13 +369,13 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             type: "PAYMENT_CONFIRMED",
             templateKey: "paymentSettled",
             params: {
-              part: request.part.name,
-              brand: request.brand.name,
-              model: request.carModel.name,
+              part: partLabel(request),
+              brand: request.brand?.name ?? request.rawBrandText ?? "",
+              model: request.carModel?.name ?? request.rawModelText ?? "",
               amount: amountStr,
             },
             title: "Balance settled",
-            body: `Your remaining balance of $${amountStr} for the ${request.part.name} is settled. Thank you!`,
+            body: `Your remaining balance of $${amountStr} for the ${partLabel(request)} is settled. Thank you!`,
           },
         });
       } else {
@@ -397,14 +398,14 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             type: "PAYMENT_CONFIRMED",
             templateKey: "paymentConfirmedPartial",
             params: {
-              part: request.part.name,
-              brand: request.brand.name,
-              model: request.carModel.name,
+              part: partLabel(request),
+              brand: request.brand?.name ?? request.rawBrandText ?? "",
+              model: request.carModel?.name ?? request.rawModelText ?? "",
               amount: amountStr,
               remaining: remainingStr,
             },
             title: "Payment confirmed",
-            body: `We confirmed your payment of $${amountStr} for the ${request.part.name}. $${remainingStr} remaining.`,
+            body: `We confirmed your payment of $${amountStr} for the ${partLabel(request)}. $${remainingStr} remaining.`,
           },
         });
       }
@@ -465,14 +466,14 @@ export async function rejectPayment(
           type: "PAYMENT_REJECTED",
           templateKey: "paymentRejected",
           params: {
-            part: request.part.name,
-            brand: request.brand.name,
-            model: request.carModel.name,
+            part: partLabel(request),
+            brand: request.brand?.name ?? request.rawBrandText ?? "",
+            model: request.carModel?.name ?? request.rawModelText ?? "",
             amount: amountStr,
             reason,
           },
           title: "Payment needs attention",
-          body: `Your payment of $${amountStr} for the ${request.part.name} couldn't be confirmed: ${reason}. Please submit a new payment.`,
+          body: `Your payment of $${amountStr} for the ${partLabel(request)} couldn't be confirmed: ${reason}. Please submit a new payment.`,
         },
       });
     });

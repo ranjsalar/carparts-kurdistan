@@ -30,7 +30,10 @@ export default async function RequestPage({
       include: {
         models: {
           orderBy: { name: "asc" },
-          include: { yearRanges: { orderBy: { startYear: "asc" } } },
+          include: {
+            yearRanges: { orderBy: { startYear: "asc" } },
+            trims: { orderBy: { name: "asc" } },
+          },
         },
       },
     }),
@@ -59,6 +62,9 @@ export default async function RequestPage({
         id: y.id,
         label: yearLabel(y),
       })),
+      // Only some models have curated trims; the form hides the field when a
+      // model has none rather than showing an empty dropdown.
+      trims: m.trims.map((tr) => ({ id: tr.id, name: tr.name })),
     })),
   }));
 
@@ -72,6 +78,7 @@ export default async function RequestPage({
         id: p.id,
         name: localized(p),
         requiresColorCode: p.requiresColorCode,
+        conditionApplies: p.conditionApplies,
         priceMin: p.priceMinUsd?.toString() ?? null,
         priceMax: p.priceMaxUsd?.toString() ?? null,
       })),

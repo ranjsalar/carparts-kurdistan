@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { computePaymentState } from "@/lib/payments";
 import { formatUsd } from "@/lib/format";
+import { partLabel, vehicleLabel } from "@/lib/request-display";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { InlineConfirm } from "@/components/InlineConfirm";
@@ -71,7 +72,7 @@ export default async function AdminPaymentsPage({
       orderBy: SORTS[sortKey],
       include: {
         request: {
-          include: { customer: true, part: true, brand: true, carModel: true, payments: true },
+          include: { customer: true, part: true, brand: true, carModel: true, trim: true, payments: true },
         },
       },
     }),
@@ -169,7 +170,7 @@ export default async function AdminPaymentsPage({
                   <div className="flex justify-between gap-3 border-b border-steel-100 pb-2">
                     <dt className="text-steel-500">{t("request")}</dt>
                     <dd className="text-end font-medium text-steel-900">
-                      {p.request.part.name} — {p.request.brand.name} {p.request.carModel.name}
+                      {partLabel(p.request)} — {vehicleLabel(p.request)}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3 border-b border-steel-100 pb-2">

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { localizedName } from "@/lib/request-display";
 import { IconBell } from "@/components/icons";
 import { SubmitButton } from "@/components/SubmitButton";
 import { btnSecondary } from "@/components/ui";
@@ -35,14 +36,10 @@ export default async function NotificationsPage() {
     if (!key || !tt.has(`${key}.title`)) return { title: n.title, body: n.body };
 
     const p = (n.params ?? {}) as Record<string, unknown>;
+    // The part may have been typed rather than picked, in which case there
+    // is no catalog row to translate — the customer's own words stand.
     const localizedPart =
-      (n.request &&
-        (locale === "ku"
-          ? n.request.part.nameKu
-          : locale === "ar"
-            ? n.request.part.nameAr
-            : null)) ||
-      n.request?.part.name ||
+      (n.request ? localizedName(n.request.part, locale) ?? n.request.rawPartText : null) ||
       String(p.part ?? "");
     // Every stored param must be available to the ICU message (amount,
     // remaining, reason, total, …). Spread them all as strings, then override
@@ -50,8 +47,8 @@ export default async function NotificationsPage() {
     const values: Record<string, string> = {};
     for (const [k, v] of Object.entries(p)) values[k] = String(v ?? "");
     values.part = localizedPart;
-    values.brand = n.request?.brand.name ?? String(p.brand ?? "");
-    values.model = n.request?.carModel.name ?? String(p.model ?? "");
+    values.brand = n.request?.brand?.name ?? n.request?.rawBrandText ?? String(p.brand ?? "");
+    values.model = n.request?.carModel?.name ?? n.request?.rawModelText ?? String(p.model ?? "");
     let body = tt(`${key}.body`, values);
     if (p.note) body += " " + tt("noteSuffix", { note: String(p.note) });
     return { title: tt(`${key}.title`), body };

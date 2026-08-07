@@ -4,8 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
+import { partLabel, vehicleLabel } from "@/lib/request-display";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
@@ -45,7 +45,7 @@ export default async function AdminCustomerDetailPage({
     include: {
       requests: {
         orderBy: { createdAt: "desc" },
-        include: { brand: true, carModel: true, yearRange: true, part: true, payments: true },
+        include: { brand: true, carModel: true, yearRange: true, trim: true, part: true, payments: true },
       },
     },
   });
@@ -112,9 +112,9 @@ export default async function AdminCustomerDetailPage({
                         {ts(r.status)}
                       </span>
                       <span className="text-caption text-steel-900">
-                        {r.part.name}{" "}
+                        {partLabel(r)}{" "}
                         <span className="text-steel-500">
-                          — {r.brand.name} {r.carModel.name} ({yearLabel(r.yearRange)})
+                          — {vehicleLabel(r)}
                         </span>
                       </span>
                       <span className="ms-auto text-caption text-steel-700" dir="ltr">

@@ -72,6 +72,7 @@ model CarModel {
   brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   yearRanges YearRange[]
+  trims      Trim[]
   requests   PartRequest[]
 
   @@unique([brandId, name])
@@ -87,6 +88,26 @@ model YearRange {
   requests PartRequest[]
 
   @@unique([carModelId, startYear, endYear])
+}
+
+// Trim / grade (GXR, VXR, Limited, …).
+//
+// Hangs off CarModel rather than YearRange on purpose. Trims are a property of
+// a model generation, not of a single calendar year, and YearRange is now one
+// row per year (~1,855 of them) — attaching trims there would mean duplicating
+// the same handful of names across every year of every model for no gain.
+// The trade-off is that a trim introduced mid-generation is still offered for
+// the model's earlier years; sourcing confirms the exact grade anyway, and the
+// field is optional.
+model Trim {
+  id         String   @id @default(cuid())
+  name       String
+  carModelId String
+  carModel   CarModel @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+
+  requests PartRequest[]
+
+  @@unique([carModelId, name])
 }
 
 // ─── Part taxonomy ───────────────────────────────────────────────────────────
@@ -123,6 +144,13 @@ model Part {
   nameKu            String?
   nameAr            String?
   requiresColorCode Boolean     @default(false)
+  // Whether the take-off / used / black-grade condition choice is meaningful
+  // for this part. True for body panels (hood, bumpers, doors) where a
+  // salvaged original is a normal thing to buy; false for everything a
+  // customer would only ever want new, like a filter or a belt. Modelled as a
+  // flag on the part rather than a hardcoded name list so the set can change
+  // from the admin taxonomy screens — same pattern as requiresColorCode.
+  conditionApplies  Boolean     @default(false)
   // Optional indicative price range shown to customers before they submit
   // (rough estimate set by admin — never a firm quote).
   priceMinUsd       Decimal?    @db.Decimal(10, 2)
@@ -156,6 +184,25 @@ enum SourceCountry {
   DUBAI
 }
 
+// Condition/grade of a body panel. Only asked for parts with conditionApplies
+// set — this distinction is meaningful for a bonnet or a door and meaningless
+// for an oil filter.
+//
+// The four options differ along two axes that matter to the customer: whether
+// the part is genuine, and whether it already carries factory paint.
+enum PartCondition {
+  // Genuine, removed from another vehicle, original factory paint intact
+  // (the LKQ / "take-off" trade term).
+  ORIGINAL_TAKE_OFF
+  // Genuine, previously fitted and used, already painted from the factory.
+  ORIGINAL_USED
+  // Genuine and brand new, but supplied in raw black primer — needs painting
+  // locally, which a paint-thickness meter can later detect.
+  NEW_UNPAINTED
+  // Aftermarket 1:1 replica. Not genuine; cheapest; quality varies by maker.
+  COPY_REPLICA
+}
+
 // Payment channels. The three online methods are Iraq-specific; cash on
 // delivery is only offered for a REMAINDER balance, never the first payment.
 enum PaymentMethod {
@@ -176,14 +223,47 @@ model PartRequest {
   customerId String
   customer   User     @relation("CustomerRequests", fields: [customerId], references: [id])
 
-  brandId     String
-  brand       Brand     @relation(fields: [brandId], references: [id])
-  carModelId  String
-  carModel    CarModel  @relation(fields: [carModelId], references: [id])
-  yearRangeId String
-  yearRange   YearRange @relation(fields: [yearRangeId], references: [id])
-  partId      String
-  part        Part      @relation(fields: [partId], references: [id])
+  // Catalog selections. All optional because a customer can pick
+  // "Other — not listed" at any level and type what they actually have; the
+  // matching raw* field below then carries their words. Exactly one of the two
+  // is set per level — enforced in submitPartRequest(), not by the database,
+  // since Postgres cannot express "either this column or that one".
+  //
+  // These were required until trims and the free-text fallback were added.
+  // Every request created before then has all four set, so existing rows are
+  // unaffected by the relaxation.
+  // onDelete: Restrict is explicit here. Prisma defaults an OPTIONAL relation
+  // to SetNull, which would quietly blank the brand out of every historical
+  // request the moment someone tidied up the taxonomy. These columns were
+  // required (and therefore Restrict) before; keeping Restrict preserves that
+  // guarantee — taxonomy in use cannot be deleted out from under an order.
+  brandId     String?
+  brand       Brand?     @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  carModelId  String?
+  carModel    CarModel?  @relation(fields: [carModelId], references: [id], onDelete: Restrict)
+  yearRangeId String?
+  yearRange   YearRange? @relation(fields: [yearRangeId], references: [id], onDelete: Restrict)
+  trimId      String?
+  trim        Trim?      @relation(fields: [trimId], references: [id], onDelete: Restrict)
+  partId      String?
+  part        Part?      @relation(fields: [partId], references: [id], onDelete: Restrict)
+
+  // What the customer typed when the catalog had no match. Deliberately kept
+  // apart from the taxonomy rather than auto-creating a Brand/Model/Part: a
+  // guess typed under time pressure is not catalog data, and admin should see
+  // plainly that a human wrote it. These are also the queue of candidates for
+  // extending the taxonomy later.
+  rawBrandText String?
+  rawModelText String?
+  // Year is a child of model, so a custom model leaves nothing to pick from —
+  // the form asks for the year as text instead.
+  rawYearText  String?
+  rawTrimText  String?
+  rawPartText  String?
+
+  // Condition is only asked for parts flagged conditionApplies (body panels).
+  // Null everywhere else, and on every request predating the field.
+  partCondition PartCondition?
 
   colorCode String?
   notes     String?

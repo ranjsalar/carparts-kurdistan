@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { PART_CONDITIONS, PART_CONDITION_KEY } from "@/lib/request-display";
 import { createRequest } from "./actions";
 import { btnAccent, btnPrimary, btnSecondary, card, inputBase, labelBase, overline, panel } from "@/components/ui";
 
@@ -12,8 +13,16 @@ export type TaxonomyBrand = {
     id: string;
     name: string;
     yearRanges: { id: string; label: string }[];
+    trims: { id: string; name: string }[];
   }[];
 };
+
+/*
+  Sentinel value for the "Other — not listed" option. A real id is a cuid, so
+  this can never collide with one. Choosing it swaps the dropdown for a text
+  box and clears the levels below, which no longer have a catalog to draw on.
+*/
+const OTHER = "__other__";
 
 export type TaxonomyCategory = {
   id: string;
@@ -25,13 +34,14 @@ export type TaxonomyCategory = {
       id: string;
       name: string;
       requiresColorCode: boolean;
+      conditionApplies: boolean;
       priceMin: string | null;
       priceMax: string | null;
     }[];
   }[];
 };
 
-type StepId = "car" | "part" | "color" | "source" | "details";
+type StepId = "car" | "part" | "color" | "condition" | "source" | "details";
 
 export type RequestFormInitial = {
   brandId?: string;
@@ -67,7 +77,15 @@ export function RequestForm({
   const [yearRangeId, setYearRangeId] = useState(initYear?.id ?? "");
   const [categoryId, setCategoryId] = useState(initCategory?.id ?? "");
   const [subCategoryId, setSubCategoryId] = useState(initSub?.id ?? "");
+  const [trimId, setTrimId] = useState("");
   const [partId, setPartId] = useState("");
+  // Free text for any level the customer marked as "not listed".
+  const [rawBrand, setRawBrand] = useState("");
+  const [rawModel, setRawModel] = useState("");
+  const [rawYear, setRawYear] = useState("");
+  const [rawTrim, setRawTrim] = useState("");
+  const [rawPart, setRawPart] = useState("");
+  const [partCondition, setPartCondition] = useState("");
   const [colorCode, setColorCode] = useState("");
   const [preferredSource, setPreferredSource] = useState("");
   const [notes, setNotes] = useState("");
@@ -78,38 +96,68 @@ export function RequestForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const brand = brands.find((b) => b.id === brandId);
-  const model = brand?.models.find((m) => m.id === modelId);
+  const brandIsOther = brandId === OTHER;
+  const modelIsOther = modelId === OTHER || brandIsOther;
+  const trimIsOther = trimId === OTHER;
+  const partIsOther = partId === OTHER;
+
+  const brand = brandIsOther ? undefined : brands.find((b) => b.id === brandId);
+  const model = modelIsOther ? undefined : brand?.models.find((m) => m.id === modelId);
   const category = categories.find((c) => c.id === categoryId);
   const subCategory = category?.subCategories.find((s) => s.id === subCategoryId);
-  const part = subCategory?.parts.find((p) => p.id === partId);
+  const part = partIsOther ? undefined : subCategory?.parts.find((p) => p.id === partId);
 
   const steps: StepId[] = ["car", "part"];
   if (part?.requiresColorCode) steps.push("color");
+  // Condition only applies to body panels, and only when the part came from
+  // the catalog — a typed part has no flag to consult.
+  if (part?.conditionApplies) steps.push("condition");
   steps.push("source", "details");
 
   const currentStep = steps[Math.min(stepIndex, steps.length - 1)];
 
+  // Each vehicle level is satisfied by either a catalog pick or typed text.
+  const brandOk = brandIsOther ? rawBrand.trim() !== "" : brandId !== "";
+  const modelOk = modelIsOther ? rawModel.trim() !== "" : modelId !== "";
+  const yearOk = modelIsOther ? rawYear.trim() !== "" : yearRangeId !== "";
+  // Trim is optional throughout — many customers do not know their grade —
+  // but if they chose "not listed" they have to say what it is.
+  const trimOk = trimIsOther ? rawTrim.trim() !== "" : true;
+  const partOk = partIsOther
+    ? rawPart.trim() !== ""
+    : Boolean(categoryId && subCategoryId && partId);
+
   const canContinue =
     currentStep === "car"
-      ? Boolean(brandId && modelId && yearRangeId)
+      ? brandOk && modelOk && yearOk && trimOk
       : currentStep === "part"
-        ? Boolean(categoryId && subCategoryId && partId)
+        ? partOk
         : currentStep === "color"
           ? colorCode.trim().length > 0
-          : currentStep === "source"
-            ? preferredSource !== ""
-            : // "details" — notes are required so every request arrives with
-              // context for the sourcing team.
-              notes.trim().length > 0;
+          : currentStep === "condition"
+            ? partCondition !== ""
+            : currentStep === "source"
+              ? preferredSource !== ""
+              : // "details" — notes are required so every request arrives with
+                // context for the sourcing team.
+                notes.trim().length > 0;
 
   function submit() {
     setError(null);
     const formData = new FormData();
-    formData.set("brandId", brandId);
-    formData.set("carModelId", modelId);
-    formData.set("yearRangeId", yearRangeId);
-    formData.set("partId", partId);
+    // Send the catalog id OR the typed text for each level, never both — the
+    // sentinel is a UI construct and must not reach the server.
+    formData.set("brandId", brandIsOther ? "" : brandId);
+    formData.set("carModelId", modelIsOther ? "" : modelId);
+    formData.set("yearRangeId", modelIsOther ? "" : yearRangeId);
+    formData.set("trimId", trimIsOther ? "" : trimId);
+    formData.set("partId", partIsOther ? "" : partId);
+    formData.set("rawBrandText", brandIsOther ? rawBrand : "");
+    formData.set("rawModelText", modelIsOther ? rawModel : "");
+    formData.set("rawYearText", modelIsOther ? rawYear : "");
+    formData.set("rawTrimText", trimIsOther ? rawTrim : "");
+    formData.set("rawPartText", partIsOther ? rawPart : "");
+    formData.set("partCondition", part?.conditionApplies ? partCondition : "");
     formData.set("preferredSource", preferredSource);
     formData.set("colorCode", colorCode);
     formData.set("notes", notes);
@@ -198,6 +246,10 @@ export function RequestForm({
                 setBrandId(e.target.value);
                 setModelId("");
                 setYearRangeId("");
+                setTrimId("");
+                setRawModel("");
+                setRawYear("");
+                setRawTrim("");
               }}
               className={inputBase}
             >
@@ -207,43 +259,139 @@ export function RequestForm({
                   {b.name}
                 </option>
               ))}
+              <option value={OTHER}>{t("otherOption")}</option>
             </select>
+            {brandIsOther && (
+              <input
+                value={rawBrand}
+                onChange={(e) => setRawBrand(e.target.value)}
+                placeholder={t("otherBrandPlaceholder")}
+                aria-label={t("otherBrandPlaceholder")}
+                className={`${inputBase} mt-2`}
+              />
+            )}
           </div>
+
           <div>
             <label className={labelBase}>{t("model")}</label>
-            <select
-              value={modelId}
-              onChange={(e) => {
-                setModelId(e.target.value);
-                setYearRangeId("");
-              }}
-              disabled={!brand}
-              className={inputBase}
-            >
-              <option value="">{t("selectModel")}</option>
-              {brand?.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+            {/* A custom brand has no models to list, so the dropdown is
+                replaced outright rather than shown disabled and useless. */}
+            {brandIsOther ? (
+              <input
+                value={rawModel}
+                onChange={(e) => setRawModel(e.target.value)}
+                placeholder={t("otherModelPlaceholder")}
+                aria-label={t("model")}
+                className={inputBase}
+              />
+            ) : (
+              <>
+                <select
+                  value={modelId}
+                  onChange={(e) => {
+                    setModelId(e.target.value);
+                    setYearRangeId("");
+                    setTrimId("");
+                    setRawYear("");
+                    setRawTrim("");
+                  }}
+                  disabled={!brand}
+                  className={inputBase}
+                >
+                  <option value="">{t("selectModel")}</option>
+                  {brand?.models.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                  {brand && <option value={OTHER}>{t("otherOption")}</option>}
+                </select>
+                {modelId === OTHER && (
+                  <input
+                    value={rawModel}
+                    onChange={(e) => setRawModel(e.target.value)}
+                    placeholder={t("otherModelPlaceholder")}
+                    aria-label={t("otherModelPlaceholder")}
+                    className={`${inputBase} mt-2`}
+                  />
+                )}
+              </>
+            )}
           </div>
+
           <div>
             <label className={labelBase}>{t("years")}</label>
-            <select
-              value={yearRangeId}
-              onChange={(e) => setYearRangeId(e.target.value)}
-              disabled={!model}
-              className={inputBase}
-            >
-              <option value="">{t("selectYears")}</option>
-              {model?.yearRanges.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.label}
-                </option>
-              ))}
-            </select>
+            {/* Years belong to a model. With a custom model there is nothing
+                to pick from, so ask for the year directly. */}
+            {modelIsOther ? (
+              <input
+                value={rawYear}
+                onChange={(e) => setRawYear(e.target.value)}
+                inputMode="numeric"
+                placeholder={t("otherYearPlaceholder")}
+                aria-label={t("years")}
+                dir="ltr"
+                className={`${inputBase} max-w-40`}
+              />
+            ) : (
+              <select
+                value={yearRangeId}
+                onChange={(e) => setYearRangeId(e.target.value)}
+                disabled={!model}
+                className={inputBase}
+              >
+                <option value="">{t("selectYears")}</option>
+                {model?.yearRanges.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.label}
+                  </option>
+                ))}
+              </select>
+            )}
             <p className="mt-1.5 text-caption text-steel-400">{t("yearsHint")}</p>
+          </div>
+
+          <div>
+            <label className={labelBase}>
+              {t("trim")}{" "}
+              <span className="font-normal text-steel-400">({t("optionalLabel")})</span>
+            </label>
+            {modelIsOther ? (
+              <input
+                value={rawTrim}
+                onChange={(e) => setRawTrim(e.target.value)}
+                placeholder={t("otherTrimPlaceholder")}
+                aria-label={t("trim")}
+                className={inputBase}
+              />
+            ) : (
+              <>
+                <select
+                  value={trimId}
+                  onChange={(e) => setTrimId(e.target.value)}
+                  disabled={!model}
+                  className={inputBase}
+                >
+                  <option value="">{t("selectTrim")}</option>
+                  {model?.trims.map((tr) => (
+                    <option key={tr.id} value={tr.id}>
+                      {tr.name}
+                    </option>
+                  ))}
+                  {model && <option value={OTHER}>{t("otherOption")}</option>}
+                </select>
+                {trimIsOther && (
+                  <input
+                    value={rawTrim}
+                    onChange={(e) => setRawTrim(e.target.value)}
+                    placeholder={t("otherTrimPlaceholder")}
+                    aria-label={t("otherTrimPlaceholder")}
+                    className={`${inputBase} mt-2`}
+                  />
+                )}
+              </>
+            )}
+            <p className="mt-1.5 text-caption text-steel-400">{t("trimHint")}</p>
           </div>
         </div>
       )}
@@ -302,7 +450,20 @@ export function RequestForm({
                   {p.name}
                 </option>
               ))}
+              {subCategory && <option value={OTHER}>{t("otherOption")}</option>}
             </select>
+            {partIsOther && (
+              <>
+                <input
+                  value={rawPart}
+                  onChange={(e) => setRawPart(e.target.value)}
+                  placeholder={t("otherPartPlaceholder")}
+                  aria-label={t("otherPartPlaceholder")}
+                  className={`${inputBase} mt-2`}
+                />
+                <p className="mt-1.5 text-caption text-steel-500">{t("otherPartHint")}</p>
+              </>
+            )}
           </div>
 
           {/* Indicative price range — instant answer for price-checkers,
@@ -332,6 +493,51 @@ export function RequestForm({
           <div className="rounded-xl border-s-4 border-brand-500 bg-brand-50 px-4 py-3 text-caption leading-relaxed text-brand-900">
             {t("colorHelper")}
           </div>
+        </div>
+      )}
+
+      {/* Condition — body panels only. A hood, bumper or door is routinely
+          bought as a salvaged original, and which grade the customer wants
+          changes both where it is sourced and what it costs. Meaningless for
+          a filter or a belt, so the step does not exist for those parts. */}
+      {currentStep === "condition" && (
+        <div className="space-y-4">
+          <div>
+            <p className="font-heading text-body font-bold text-steel-900">
+              {t("condition.title", { part: part?.name ?? "" })}
+            </p>
+            <p className="mt-1 text-caption text-steel-500">{t("condition.hint")}</p>
+          </div>
+          {PART_CONDITIONS.map((value) => {
+            const key = PART_CONDITION_KEY[value];
+            return (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors ${
+                  partCondition === value
+                    ? "border-brand-500 bg-brand-50"
+                    : "border-steel-200 bg-white hover:border-steel-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="partConditionRadio"
+                  value={value}
+                  checked={partCondition === value}
+                  onChange={() => setPartCondition(value)}
+                  className="mt-1.5 accent-brand-600"
+                />
+                <span>
+                  <span className="block font-heading text-body font-bold text-steel-900">
+                    {t(`condition.${key}`)}
+                  </span>
+                  <span className="mt-0.5 block text-caption text-steel-500">
+                    {t(`condition.${key}Hint`)}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
         </div>
       )}
 
@@ -377,12 +583,32 @@ export function RequestForm({
           <div className={`${panel} px-5 py-4`}>
             <p className={overline}>{t("summary")}</p>
             <p className="mt-1.5 font-heading text-body font-semibold text-steel-900">
-              {brand?.name} {model?.name} (
-              {model?.yearRanges.find((y) => y.id === yearRangeId)?.label}) — {part?.name}
+              {/* Mirrors what the request will actually say, typed values
+                  included, so nothing is a surprise after submitting. */}
+              {brandIsOther ? rawBrand : brand?.name}{" "}
+              {modelIsOther ? rawModel : model?.name} (
+              {modelIsOther
+                ? rawYear
+                : model?.yearRanges.find((y) => y.id === yearRangeId)?.label}
+              )
+              {(() => {
+                const trimText = trimIsOther
+                  ? rawTrim
+                  : model?.trims.find((tr) => tr.id === trimId)?.name;
+                return trimText ? ` · ${trimText}` : "";
+              })()}{" "}
+              — {partIsOther ? rawPart : part?.name}
               {part?.requiresColorCode && colorCode
                 ? `, ${t("colorSummary", { code: colorCode })}`
                 : ""}
             </p>
+            {part?.conditionApplies && partCondition && (
+              <p className="mt-1 text-caption text-steel-600">
+                {t("condition.summary", {
+                  value: t(`condition.${PART_CONDITION_KEY[partCondition]}`),
+                })}
+              </p>
+            )}
           </div>
           <div>
             <label className={labelBase}>

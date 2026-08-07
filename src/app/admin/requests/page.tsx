@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses, statusLabels } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
+import { partLabel, vehicleLabel } from "@/lib/request-display";
 import { IconRequest } from "@/components/icons";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
@@ -31,6 +31,7 @@ export default async function RequestsQueuePage({
         brand: true,
         carModel: true,
         yearRange: true,
+        trim: true,
         part: true,
         payments: true,
       },
@@ -134,8 +135,8 @@ export default async function RequestsQueuePage({
                   </div>
 
                   <p className="mt-2 text-caption text-steel-700">
-                    {r.brand.name} {r.carModel.name} ({yearLabel(r.yearRange)})
-                    <span className="text-steel-500"> · {r.part.name}</span>
+                    {vehicleLabel(r)}
+                    <span className="text-steel-500"> · {partLabel(r)}</span>
                     {r.colorCode && <span className="text-steel-500"> · {r.colorCode}</span>}
                   </p>
 
@@ -217,14 +218,10 @@ export default async function RequestsQueuePage({
                     </p>
                   </td>
                   <td className="px-4 py-3.5 text-steel-700">
-                    {r.brand.name} {r.carModel.name}
-                    <span className="text-steel-400">
-                      {" "}
-                      ({yearLabel(r.yearRange)})
-                    </span>
+                    {vehicleLabel(r)}
                   </td>
                   <td className="px-4 py-3.5 text-steel-700">
-                    {r.part.name}
+                    {partLabel(r)}
                     {r.colorCode && (
                       <span className="ms-1 text-overline text-steel-400">· {r.colorCode}</span>
                     )}

@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { partLabel } from "./request-display";
 import { computePaymentState } from "./payments";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
@@ -103,9 +104,9 @@ export async function advanceShipment(
         requestId,
         type: "STATUS_UPDATE",
         templateKey: copy.templateKey,
-        params: { part: request.part.name, note: note?.trim() || null },
+        params: { part: partLabel(request), note: note?.trim() || null },
         title: copy.title,
-        body: copy.body(request.part.name) + (note?.trim() ? ` Note: ${note.trim()}` : ""),
+        body: copy.body(partLabel(request)) + (note?.trim() ? ` Note: ${note.trim()}` : ""),
       },
     }),
   ]);

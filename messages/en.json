@@ -128,7 +128,13 @@
     "importNoFile": "Choose a CSV or JSON file to import.",
     "importTooLarge": "That file is too large (max 2 MB).",
     "importUnreadable": "That file could not be read — export a fresh copy and edit that.",
-    "importEmpty": "That file has no rows."
+    "importEmpty": "That file has no rows.",
+    "brandRequired": "Please choose a make or type one in.",
+    "modelRequired": "Please choose a model or type one in.",
+    "yearRequired": "Please choose or type the year.",
+    "partRequired": "Please choose a part or describe the one you need.",
+    "conditionRequired": "Please choose the condition you want for this part.",
+    "conditionNotApplicable": "Condition doesn't apply to this part."
   },
   "auth": {
     "login": {
@@ -179,6 +185,7 @@
       "car": "Your car",
       "part": "The part",
       "color": "Color code",
+      "condition": "Condition",
       "source": "Source",
       "details": "Details & submit"
     },
@@ -221,7 +228,31 @@
     "asideNotifyTitle": "What happens next",
     "asideNotifyBody": "We'll notify you here as soon as your quote is ready — watch the bell at the top.",
     "typicalRange": "Typical range: ${min}–${max}",
-    "typicalRangeHint": "Rough estimate only — submit the request and we'll confirm the exact price."
+    "typicalRangeHint": "Rough estimate only — submit the request and we'll confirm the exact price.",
+    "trim": "Trim / grade",
+    "selectTrim": "Select trim…",
+    "trimHint": "Leave blank if you're not sure — we'll confirm it with you.",
+    "optionalLabel": "optional",
+    "otherOption": "Other — not listed",
+    "otherBrandPlaceholder": "Type the make",
+    "otherModelPlaceholder": "Type the model",
+    "otherYearPlaceholder": "e.g. 2019",
+    "otherTrimPlaceholder": "Type the trim / grade",
+    "otherPartPlaceholder": "Describe the part you need",
+    "otherPartHint": "Describe it as precisely as you can — we'll come back to you if anything is unclear.",
+    "condition": {
+      "title": "What condition of {part} do you want?",
+      "hint": "This changes where we source it and what it costs.",
+      "takeOff": "Original Take-Off Part (LKQ)",
+      "takeOffHint": "A genuine part removed from another vehicle, with its original factory paint intact.",
+      "used": "Original Part — Used (Second-Hand)",
+      "usedHint": "A genuine used original part, already painted from the factory.",
+      "newUnpainted": "New, Unpainted (Black)",
+      "newUnpaintedHint": "A brand-new factory part in raw black finish — not yet painted. You'll need to have it painted locally to match your car. Note: a local paint job can later be detected by a paint-thickness meter, unlike Take-Off or Original Used parts which already carry factory paint.",
+      "copyReplica": "Copy Part (1:1 Replica)",
+      "copyReplicaHint": "An aftermarket replica made to match the original part's shape and fit — not a genuine factory part. Quality can vary by manufacturer; typically the most affordable option.",
+      "summary": "Condition: {value}"
+    }
   },
   "myRequests": {
     "title": "My requests",
@@ -265,7 +296,10 @@
       "approved": "Quote approved — now choose how you'd like to pay.",
       "rejected": "Quote rejected. This request is closed.",
       "paymentSubmitted": "Payment submitted — our team will verify and confirm it shortly."
-    }
+    },
+    "conditionLabel": "Condition",
+    "trimLabel": "Trim",
+    "customEntry": "Typed by customer"
   },
   "payment": {
     "methodFib": "FIB (First Iraqi Bank)",
@@ -646,7 +680,17 @@
       "confirmHint": "Only confirm once the money is actually in hand/account.",
       "advanceHint": "Statuses advance one step at a time and can't be undone, so update only when the stage is really reached.",
       "notePlaceholder": "e.g. cleared customs, 3–5 days to warehouse",
-      "recentValues": "Recent:"
+      "recentValues": "Recent:",
+      "conditionLabel": "Condition",
+      "customEntryTitle": "Customer typed this in",
+      "customEntryHint": "Not from the catalog — check it, and consider adding it to the taxonomy.",
+      "customEntryField": {
+        "brand": "Make",
+        "model": "Model",
+        "year": "Year",
+        "trim": "Trim",
+        "part": "Part"
+      }
     },
     "customers": {
       "navTitle": "Customers",

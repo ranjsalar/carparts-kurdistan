@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { partLabel } from "./request-display";
 import { TIMELINE } from "./timeline";
 import type { SourceCountry } from "@/generated/prisma/enums";
 
@@ -108,13 +109,13 @@ export async function sendQuote(
         type: "QUOTE_SENT",
         templateKey: isUpdate ? "quoteUpdated" : "quoteSent",
         params: {
-          part: request.part.name,
-          brand: request.brand.name,
-          model: request.carModel.name,
+          part: partLabel(request),
+          brand: request.brand?.name ?? request.rawBrandText ?? "",
+          model: request.carModel?.name ?? request.rawModelText ?? "",
           total,
         },
         title: isUpdate ? "Your quote was updated" : "Your quote is ready",
-        body: `${request.part.name} for your ${request.brand.name} ${request.carModel.name}: $${total}. Open “My requests” to review and approve.`,
+        body: `${partLabel(request)} for your ${request.brand?.name ?? request.rawBrandText ?? ""} ${request.carModel?.name ?? request.rawModelText ?? ""}: $${total}. Open “My requests” to review and approve.`,
       },
     }),
   ]);

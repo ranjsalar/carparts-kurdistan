@@ -5,11 +5,16 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { statusBadgeClasses, statusLabels } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { yearLabel } from "@/lib/years";
 import { computePaymentState } from "@/lib/payments";
 import { renderTimelineNote, type TimelineContext } from "@/lib/timeline";
 import { nextShipmentStatus } from "@/lib/shipments";
 import { getQuoteSuggestions } from "@/lib/quote-suggestions";
+import {
+  PART_CONDITION_KEY,
+  customEntries,
+  partLabel,
+  vehicleLabel,
+} from "@/lib/request-display";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
@@ -50,6 +55,7 @@ export default async function RequestDetailPage({
   const te = await getTranslations("errors");
   const tl = await getTranslations("timeline");
   const tov = await getTranslations("admin.override");
+  const trf = await getTranslations("requestForm");
 
   const noteCtx: TimelineContext = {
     t: (key, values) => tl(key, values),
@@ -71,6 +77,7 @@ export default async function RequestDetailPage({
       brand: true,
       carModel: true,
       yearRange: true,
+      trim: true,
       part: { include: { subCategory: { include: { category: true } } } },
       quotedBy: true,
       statusLogs: { orderBy: { createdAt: "asc" }, include: { createdBy: true } },
@@ -97,10 +104,8 @@ export default async function RequestDetailPage({
 
       <div className="mt-3 mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-bold text-steel-900">
-          {request.part.name}{" "}
-          <span className="font-normal text-steel-500">
-            — {request.brand.name} {request.carModel.name}
-          </span>
+          {partLabel(request)}{" "}
+          <span className="font-normal text-steel-500">— {vehicleLabel(request)}</span>
         </h1>
         <span
           className={`rounded-full px-3 py-1 font-heading text-overline font-semibold uppercase ${statusBadgeClasses[request.status]}`}
@@ -124,15 +129,14 @@ export default async function RequestDetailPage({
             <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-steel-400">{tq("vehicle")}</dt>
-                <dd className="font-medium text-steel-900">
-                  {request.brand.name} {request.carModel.name} ({yearLabel(request.yearRange)})
-                </dd>
+                <dd className="font-medium text-steel-900">{vehicleLabel(request)}</dd>
               </div>
               <div>
                 <dt className="text-steel-400">{tq("part")}</dt>
                 <dd className="font-medium text-steel-900">
-                  {request.part.subCategory.category.name} › {request.part.subCategory.name} ›{" "}
-                  {request.part.name}
+                  {request.part
+                    ? `${request.part.subCategory.category.name} › ${request.part.subCategory.name} › ${request.part.name}`
+                    : partLabel(request)}
                 </dd>
               </div>
               <div>
@@ -153,6 +157,16 @@ export default async function RequestDetailPage({
                   })}
                 </dd>
               </div>
+              {request.partCondition && (
+                <div>
+                  <dt className="text-steel-400">{t("conditionLabel")}</dt>
+                  <dd className="font-medium text-steel-900">
+                    <span className="rounded-md bg-brand-50 px-2 py-0.5 text-brand-800 ring-1 ring-brand-200">
+                      {trf(`condition.${PART_CONDITION_KEY[request.partCondition]}`)}
+                    </span>
+                  </dd>
+                </div>
+              )}
               {request.notes && (
                 <div className="sm:col-span-2">
                   <dt className="text-steel-400">{t("customerNotes")}</dt>
@@ -160,6 +174,26 @@ export default async function RequestDetailPage({
                 </div>
               )}
             </dl>
+
+            {/* Anything the customer typed instead of picking. Called out
+                deliberately: these values are unverified, may be misspelled,
+                and are the queue of candidates for extending the taxonomy. */}
+            {customEntries(request).length > 0 && (
+              <div className="mt-4 rounded-xl border-s-4 border-accent-500 bg-accent-50 px-4 py-3">
+                <p className="font-heading text-overline font-semibold uppercase text-accent-800">
+                  {t("customEntryTitle")}
+                </p>
+                <ul className="mt-1.5 space-y-0.5 text-sm text-accent-900">
+                  {customEntries(request).map((entry) => (
+                    <li key={entry.field}>
+                      <span className="text-accent-700">{t(`customEntryField.${entry.field}`)}:</span>{" "}
+                      <span className="font-semibold">“{entry.text}”</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-caption text-accent-800">{t("customEntryHint")}</p>
+              </div>
+            )}
             {request.photoUrl && (
               <div className="mt-4">
                 <p className="mb-1 text-sm text-steel-400">{t("attachedPhoto")}</p>

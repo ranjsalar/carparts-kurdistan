@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
-import { yearLabel } from "@/lib/years";
+import { partLabel, vehicleLabel } from "@/lib/request-display";
 import { btnPrimary, card } from "@/components/ui";
 import { SuccessDialog } from "@/components/SuccessDialog";
 
@@ -29,13 +29,10 @@ export default async function MyRequestsPage({
       brand: true,
       carModel: true,
       yearRange: true,
+      trim: true,
       part: true,
     },
   });
-
-  // Part names carry optional Kurdish/Arabic translations; fall back to English.
-  const localized = (row: { name: string; nameKu?: string | null; nameAr?: string | null }) =>
-    (locale === "ku" ? row.nameKu : locale === "ar" ? row.nameAr : null) ?? row.name;
 
   return (
     <div>
@@ -65,10 +62,10 @@ export default async function MyRequestsPage({
                     href={`/requests/${r.id}`}
                     className="font-heading text-heading font-bold text-steel-900 hover:text-brand-700"
                   >
-                    {localized(r.part)}
+                    {partLabel(r, locale)}
                   </Link>
                   <p className="mt-1 text-caption text-steel-600">
-                    {r.brand.name} {r.carModel.name} ({yearLabel(r.yearRange)})
+                    {vehicleLabel(r)}
                     {r.colorCode && (
                       <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
                         {t("colorBadge", { code: r.colorCode })}
