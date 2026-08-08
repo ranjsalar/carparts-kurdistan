@@ -149,8 +149,8 @@ npx prisma generate
 npx prisma db seed
 ```
 
-The seed creates the vehicle and part taxonomy plus a development admin account, and prints its
-credentials. Read the warning below before deploying anywhere.
+The seed creates the vehicle and part taxonomy, and the payment receiving accounts. **It does not
+create any user account** — see below.
 
 **5. Run it**
 
@@ -160,6 +160,39 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Creating the first admin
+
+There is deliberately no admin account in the seed, and no way to register as an admin through the
+app — `/signup` only ever creates customers. Promoting the first one is a manual step you take
+against the database on purpose:
+
+**1.** Register normally at `/signup` with the email and password you want the admin to use.
+
+**2.** Promote that account to `ADMIN`. Either open Prisma Studio and change the `role` field:
+
+```bash
+npx prisma studio
+```
+
+…or run one statement against the database:
+
+```bash
+docker compose exec -T db psql -U carparts -d carparts \
+  -c "UPDATE \"User\" SET role = 'ADMIN' WHERE email = 'you@example.com';"
+```
+
+**3.** Sign out and back in. The role is read from the session token, so an existing session keeps
+the old role until you do.
+
+Repeat for any further admins. There is no admin-creates-admin screen — granting that power is a
+database action, which keeps it deliberate and auditable.
+
+> [!NOTE]
+> Earlier versions of this seed bootstrapped an `admin@…local` account with a password written in
+> `prisma/seed.ts`. That was removed: the file is committed, so those credentials were public, and
+> a seed run pointed at the wrong database would have handed out an admin login. Nothing in the
+> repository can create an admin any more.
+
 ### Signing in
 
 - **Customers** register with email and password, or sign in with a phone number and a one-time
@@ -167,12 +200,6 @@ Open [http://localhost:3000](http://localhost:3000).
   console** — copy it from your terminal.
 - **Admins** sign in with email and password. Repeated failed attempts lock the account for 15
   minutes, and every attempt is recorded in the admin login audit trail on the dashboard.
-
-> [!WARNING]
-> The seeded admin account exists only to get you running locally. **Change its email and password —
-> ideally delete the account entirely — before deploying this anywhere reachable.** The seed script
-> is public, so its default credentials are public too. `SECURITY.md` has a full pre-launch
-> checklist.
 
 ---
 
@@ -202,7 +229,7 @@ messages/              en / ku / ar translation files
 prisma/
   schema.prisma        data model
   migrations/          migration history
-  seed.ts              taxonomy + development admin account
+  seed.ts              taxonomy + payment accounts (creates no users)
 src/
   app/
     (auth)/            login, signup, phone OTP

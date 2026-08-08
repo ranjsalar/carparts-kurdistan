@@ -156,9 +156,12 @@ Named so nobody assumes coverage that does not exist:
 3. **Database**: don't expose Postgres publicly (bind to localhost or a
    private network; the dev `docker-compose.yml` maps it to host port 5433).
    Set up automated backups.
-4. **Seeded admin account**: change or delete `admin@kalarycarpart.local`
-   (password `admin1234`) before production; create real admin accounts with
-   strong passwords.
+4. **Admin accounts**: the seed creates none, and nothing in the repository
+   can — `/signup` only ever produces customers. Bootstrap the first admin by
+   registering normally and promoting that row to `ADMIN` in the database (see
+   "Creating the first admin" in README.md). Confirm on any deployed
+   environment that the only `ADMIN` rows are ones you created deliberately:
+   `SELECT email, "createdAt" FROM "User" WHERE role = 'ADMIN';`
 5. **Test data**: wipe the dev test customer (+9647501234567) and its
    requests/uploads before launch.
 6. Set `NODE_ENV=production` (activates secure cookies and drops

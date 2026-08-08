@@ -1,16 +1,10 @@
 import "dotenv/config";
-import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });
-
-// Development-only credentials. These are public (this file is committed), so
-// they are used ONLY to bootstrap an empty local database — see main().
-const ADMIN_EMAIL = "admin@kalarycarpart.local";
-const ADMIN_PASSWORD = "admin1234";
 
 /*
   Business payment-receiving details come from the environment rather than this
@@ -806,25 +800,19 @@ const partTaxonomy: {
 ];
 
 async function main() {
-  // Development-only convenience account, created ONLY when the database has
-  // no admin at all (i.e. a fresh local setup). Never upsert unconditionally:
-  // once a real admin exists with real credentials, re-running the seed must
-  // not quietly re-add a second admin whose password is public in this file.
-  const existingAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
-  if (existingAdmin) {
-    console.log("Admin already exists — skipping the development admin account.");
-  } else {
-    await prisma.user.create({
-      data: {
-        name: "Admin",
-        email: ADMIN_EMAIL,
-        passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
-        role: "ADMIN",
-      },
-    });
-    console.log(`Development admin created: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-    console.log("Change these before deploying anywhere reachable.");
-  }
+  /*
+    This seed deliberately creates NO admin account.
+
+    It used to bootstrap one with a password written in this file. That was
+    only ever a local convenience, and it is a liability: the file is
+    committed, so the credentials are public, and a seed run against the wrong
+    database would hand out an admin login. A real admin now exists, so the
+    fallback has no legitimate use left.
+
+    Bootstrapping the first admin on a brand-new database is a deliberate
+    manual step — register through the app, then promote that account. See
+    "Creating the first admin" in README.md.
+  */
 
   // Payment receiving accounts — the business accounts customers are told to
   // send money to. These are not secrets: every customer is shown them on the
