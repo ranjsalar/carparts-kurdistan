@@ -26,7 +26,7 @@ export function BrandGrid({ brands }: { brands: SelectorBrand[] }) {
               type="button"
               onClick={() => setExpandedId(isOpen ? null : brand.id)}
               aria-expanded={isOpen}
-              className={`group rounded-2xl border px-5 py-6 text-center transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
+              className={`group rounded-2xl border px-5 py-6 text-center transition-[color,background-color,border-color,box-shadow] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
                 isOpen
                   ? "border-brand-500 bg-brand-50 shadow-lg shadow-steel-900/5"
                   : "border-steel-200 bg-white hover:border-brand-400 hover:shadow-lg hover:shadow-steel-900/5"

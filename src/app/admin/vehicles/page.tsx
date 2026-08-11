@@ -55,7 +55,7 @@ export default async function VehiclesPage({
           name="name"
           required
           placeholder={t("brandPlaceholder")}
-          className="flex-1 rounded-lg border border-steel-300 px-3.5 py-2 text-caption text-steel-900 focus:border-brand-500 focus:outline-none"
+          className="flex-1 rounded-lg border border-steel-300 px-3.5 py-2 text-caption text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
         />
         <button className="rounded-lg bg-brand-700 px-4 py-2 font-heading text-caption font-semibold text-white hover:bg-brand-800">
           {t("addBrand")}
@@ -68,7 +68,7 @@ export default async function VehiclesPage({
             <summary className="flex cursor-pointer items-center justify-between px-4 py-3">
               <span className="font-heading font-semibold text-steel-900">
                 {brand.name}{" "}
-                <span className="ms-2 text-caption font-normal text-steel-400">
+                <span className="ms-2 text-caption font-normal text-steel-500">
                   {t("modelsCount", { count: brand.models.length })}
                 </span>
               </span>
@@ -87,7 +87,7 @@ export default async function VehiclesPage({
                   name="name"
                   required
                   placeholder={t("modelPlaceholder")}
-                  className="flex-1 rounded-lg border border-steel-300 px-3.5 py-1.5 text-caption text-steel-900 focus:border-brand-500 focus:outline-none"
+                  className="flex-1 rounded-lg border border-steel-300 px-3.5 py-1.5 text-caption text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
                 />
                 <button className="rounded-lg bg-steel-800 px-3 py-1.5 font-heading text-caption font-semibold text-white hover:bg-steel-700">
                   {t("addModel")}
@@ -143,7 +143,7 @@ export default async function VehiclesPage({
                           <button className="inline-flex min-h-11 items-center rounded-lg border border-steel-300 px-3 text-overline text-steel-600 hover:bg-steel-100">
                             {t("addYears")}
                           </button>
-                          <span className="text-overline text-steel-400">{t("addYearsHint")}</span>
+                          <span className="text-overline text-steel-500">{t("addYearsHint")}</span>
                         </form>
                         <Link
                           href="/admin/vehicles"
@@ -159,7 +159,7 @@ export default async function VehiclesPage({
                             ? `${statsByModel.get(model.id)!._min.startYear}–${statsByModel.get(model.id)!._max.endYear}`
                             : "—"}
                         </span>
-                        <span className="text-overline text-steel-400">
+                        <span className="text-overline text-steel-500">
                           {t("yearCount", { count: statsByModel.get(model.id)?._count._all ?? 0 })}
                         </span>
                         <Link
@@ -173,13 +173,13 @@ export default async function VehiclesPage({
                   </li>
                 ))}
                 {brand.models.length === 0 && (
-                  <li className="text-caption text-steel-400">{t("noModels")}</li>
+                  <li className="text-caption text-steel-500">{t("noModels")}</li>
                 )}
               </ul>
             </div>
           </details>
         ))}
-        {brands.length === 0 && <p className="text-caption text-steel-400">{t("noBrands")}</p>}
+        {brands.length === 0 && <p className="text-caption text-steel-500">{t("noBrands")}</p>}
       </div>
     </div>
   );

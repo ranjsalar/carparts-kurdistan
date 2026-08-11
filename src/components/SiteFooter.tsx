@@ -51,13 +51,13 @@ export async function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-6">
         <div className="sm:col-span-2">
           <Logo tone="light" variant="full" size="lg" />
-          <p className="mt-4 max-w-xs text-caption leading-relaxed text-steel-400">
+          <p className="mt-4 max-w-xs text-caption leading-relaxed text-steel-300">
             {th("tagline")}
           </p>
         </div>
         {columns.map((col) => (
           <div key={col.title}>
-            <h3 className="font-heading text-overline font-semibold uppercase text-steel-500">
+            <h3 className="font-heading text-overline font-semibold uppercase text-steel-300">
               {col.title}
             </h3>
             <ul className="mt-4 space-y-2.5">
@@ -65,7 +65,7 @@ export async function SiteFooter() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-caption text-steel-300 transition-colors hover:text-white"
+                    className="text-caption text-steel-200 transition-colors hover:text-white"
                   >
                     {link.label}
                   </Link>
@@ -77,10 +77,10 @@ export async function SiteFooter() {
       </div>
       <div className="border-t border-steel-800">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-5">
-          <p className="text-caption text-steel-500">
+          <p className="text-caption text-steel-300">
             {t("rights", { year: new Date().getFullYear() })}
           </p>
-          <p className="text-caption text-steel-500">{th("footer")}</p>
+          <p className="text-caption text-steel-300">{th("footer")}</p>
         </div>
       </div>
     </footer>

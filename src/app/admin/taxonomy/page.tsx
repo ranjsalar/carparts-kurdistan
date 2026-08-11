@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { btnPrimary } from "@/components/ui";
 import { HEADERS } from "@/lib/taxonomy-io";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
@@ -98,7 +99,7 @@ export default async function AdminTaxonomyPage({
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-overline text-steel-500">{t("upsertOnly")}</p>
-                <SubmitButton className="rounded-lg bg-brand-700 px-5 py-2.5 font-heading text-sm font-semibold text-white hover:bg-brand-800">
+                <SubmitButton className={btnPrimary}>
                   {t("runImport")}
                 </SubmitButton>
               </div>

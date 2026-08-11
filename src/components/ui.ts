@@ -19,10 +19,27 @@ export const btnDanger = `${btnBase} border border-steel-300 bg-white px-5 py-3 
 export const inputBase =
   "w-full rounded-lg border border-steel-300 bg-white px-3.5 py-3 text-body text-steel-900 placeholder:text-steel-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15 disabled:bg-steel-100 disabled:text-steel-400";
 
+/*
+  Dropdowns. Same box as inputBase plus .select-field, which suppresses the
+  OS-drawn arrow and substitutes our own (see globals.css). Every <select> in
+  the app should use this — a bare inputBase select falls back to the platform
+  control and will not match anything around it.
+*/
+export const selectBase = `${inputBase} select-field`;
+
 export const labelBase = "mb-1.5 block text-caption font-medium text-steel-700";
 
-export const overline =
-  "font-heading text-overline font-semibold uppercase text-steel-500";
+/*
+  Typography only — deliberately no colour.
+
+  It used to bake in text-steel-500. Two call sites tried to override that for
+  dark panels with `${overline} text-brand-300`, and silently lost: Tailwind
+  resolves conflicting utilities by stylesheet order, not by the order they
+  appear in the class attribute, so text-steel-500 kept winning and the label
+  rendered at 2.69:1 on brand-900 — well under AA. Leaving the colour out means
+  every caller states it, and the conflict cannot happen.
+*/
+export const overline = "font-heading text-overline font-semibold uppercase";
 
 /* Surfaces — deliberately varied, not one card style for everything:
    card   — bordered white surface (primary content)

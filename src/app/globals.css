@@ -189,6 +189,35 @@ h4 {
   --text-xs--line-height: 1.5;
 }
 
+/*
+  Native <select> draws its own arrow, and that arrow is decided by the
+  operating system: a flat triangle on Windows, a rounded double-chevron on
+  macOS, something else again on Android. Every other control in the app is
+  drawn by us, so the dropdowns were the one place the design system stopped at
+  the browser's edge. appearance:none removes it; the chevron below replaces it
+  with the same stroke weight and colour as the icon set.
+
+  The arrow is positioned with a logical inline offset so it moves to the left
+  edge in Kurdish and Arabic instead of colliding with the text.
+*/
+.select-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%235c6e71' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5 10 12.5 15 7.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 1.125rem 1.125rem;
+  background-position: right 0.75rem center;
+  padding-inline-end: 2.5rem;
+}
+
+[dir="rtl"] .select-field {
+  background-position: left 0.75rem center;
+}
+
+.select-field:disabled {
+  opacity: 1; /* the disabled tint comes from the token, not from opacity */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23bcc8ca' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5 10 12.5 15 7.5'/%3E%3C/svg%3E");
+}
+
 /* Micro-interaction for panels/menus that appear on state change (language
    dropdown, brand-model panel): a short rise-in so they don't pop. Respects
    reduced-motion preferences. */
@@ -207,8 +236,33 @@ h4 {
   animation: rise-in 0.16s ease-out;
 }
 
+/*
+  Reduced motion.
+
+  This used to cover only .animate-rise, which left the loading spinners — the
+  most frequent animation in the app, on every submit button — spinning
+  regardless of the setting. The blanket rule below catches those and anything
+  added later, so a new animation cannot quietly opt itself out.
+
+  Spinners are slowed to a near-stop rather than removed: a spinner that is not
+  moving at all reads as a frozen page, so it keeps a very slow rotation to
+  signal "still working" without the vestibular cost of a fast spin.
+*/
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .animate-rise {
-    animation: none;
+    animation: none !important;
+  }
+
+  .animate-spin {
+    animation: spin 2.5s linear infinite !important;
   }
 }

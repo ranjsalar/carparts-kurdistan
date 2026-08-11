@@ -67,7 +67,7 @@ export default async function MyRequestsPage({
                   <p className="mt-1 text-caption text-steel-600">
                     {vehicleLabel(r)}
                     {r.colorCode && (
-                      <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
+                      <span className="ms-2 rounded-full bg-steel-100 px-2.5 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
                         {t("colorBadge", { code: r.colorCode })}
                       </span>
                     )}

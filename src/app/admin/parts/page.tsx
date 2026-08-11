@@ -46,7 +46,7 @@ export default async function PartsPage({
           name="name"
           required
           placeholder={t("categoryPlaceholder")}
-          className="flex-1 rounded-lg border border-steel-300 px-3.5 py-2 text-caption text-steel-900 focus:border-brand-500 focus:outline-none"
+          className="flex-1 rounded-lg border border-steel-300 px-3.5 py-2 text-caption text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
         />
         <button className="rounded-lg bg-brand-700 px-4 py-2 font-heading text-caption font-semibold text-white hover:bg-brand-800">
           {t("addCategory")}
@@ -78,7 +78,7 @@ export default async function PartsPage({
                   name="name"
                   required
                   placeholder={t("subPlaceholder")}
-                  className="flex-1 rounded-lg border border-steel-300 px-3.5 py-1.5 text-caption text-steel-900 focus:border-brand-500 focus:outline-none"
+                  className="flex-1 rounded-lg border border-steel-300 px-3.5 py-1.5 text-caption text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
                 />
                 <button className="rounded-lg bg-steel-800 px-3 py-1.5 font-heading text-caption font-semibold text-white hover:bg-steel-700">
                   {t("addSub")}
