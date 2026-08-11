@@ -161,7 +161,7 @@ export default async function RequestDetailPage({
                 <div>
                   <dt className="text-steel-400">{t("conditionLabel")}</dt>
                   <dd className="font-medium text-steel-900">
-                    <span className="rounded-md bg-brand-50 px-2 py-0.5 text-brand-800 ring-1 ring-brand-200">
+                    <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-brand-800 ring-1 ring-brand-200">
                       {trf(`condition.${PART_CONDITION_KEY[request.partCondition]}`)}
                     </span>
                   </dd>
@@ -466,7 +466,7 @@ export default async function RequestDetailPage({
                 <select
                   name="status"
                   defaultValue={request.status}
-                  className="w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none"
+                  className="select-field w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/15"
                 >
                   {ALL_STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -483,7 +483,7 @@ export default async function RequestDetailPage({
                   name="reason"
                   required
                   placeholder={tov("reasonPlaceholder")}
-                  className="w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none"
+                  className="w-full rounded-lg border border-steel-300 bg-white px-3 py-2 text-caption text-steel-900 focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-600/15"
                 />
               </div>
               <ConfirmSubmit

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { btnPrimary } from "@/components/ui";
 import { statusBadgeClasses } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
 import { computePaymentState } from "@/lib/payments";
@@ -177,7 +178,7 @@ export default async function AdminCustomerDetailPage({
                 </div>
               </div>
               <div className="flex justify-end">
-                <SubmitButton className="rounded-lg bg-brand-700 px-5 py-2.5 font-heading text-sm font-semibold text-white hover:bg-brand-800">
+                <SubmitButton className={btnPrimary}>
                   {tc("save")}
                 </SubmitButton>
               </div>

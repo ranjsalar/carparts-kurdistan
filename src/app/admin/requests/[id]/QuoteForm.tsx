@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/SubmitButton";
-import { inputBase, labelBase } from "@/components/ui";
+import { inputBase, labelBase, selectBase } from "@/components/ui";
 import { sendQuoteAction } from "./actions";
 
 /*
@@ -68,7 +68,7 @@ export function QuoteForm({
           name="source"
           required
           defaultValue={defaults.source}
-          className={inputBase}
+          className={selectBase}
         >
           <option value="CHINA">{t("china")}</option>
           <option value="DUBAI">{t("dubai")}</option>

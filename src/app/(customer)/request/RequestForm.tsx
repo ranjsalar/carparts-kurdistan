@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { PART_CONDITIONS, PART_CONDITION_KEY } from "@/lib/request-display";
 import { createRequest } from "./actions";
-import { btnAccent, btnPrimary, btnSecondary, card, inputBase, labelBase, overline, panel } from "@/components/ui";
+import { btnAccent, btnPrimary, btnSecondary, card, inputBase, labelBase, overline, panel, selectBase } from "@/components/ui";
 
 export type TaxonomyBrand = {
   id: string;
@@ -197,7 +197,7 @@ export function RequestForm({
                     state === "done"
                       ? "bg-brand-600 text-white"
                       : state === "current"
-                        ? "bg-accent-500 text-white ring-4 ring-accent-100"
+                        ? "bg-accent-600 text-white ring-4 ring-accent-100"
                         : "border-2 border-steel-300 bg-white text-steel-400"
                   }`}
                 >
@@ -251,7 +251,7 @@ export function RequestForm({
                 setRawYear("");
                 setRawTrim("");
               }}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("selectBrand")}</option>
               {brands.map((b) => (
@@ -296,7 +296,7 @@ export function RequestForm({
                     setRawTrim("");
                   }}
                   disabled={!brand}
-                  className={inputBase}
+                  className={selectBase}
                 >
                   <option value="">{t("selectModel")}</option>
                   {brand?.models.map((m) => (
@@ -338,7 +338,7 @@ export function RequestForm({
                 value={yearRangeId}
                 onChange={(e) => setYearRangeId(e.target.value)}
                 disabled={!model}
-                className={inputBase}
+                className={selectBase}
               >
                 <option value="">{t("selectYears")}</option>
                 {model?.yearRanges.map((y) => (
@@ -370,7 +370,7 @@ export function RequestForm({
                   value={trimId}
                   onChange={(e) => setTrimId(e.target.value)}
                   disabled={!model}
-                  className={inputBase}
+                  className={selectBase}
                 >
                   <option value="">{t("selectTrim")}</option>
                   {model?.trims.map((tr) => (
@@ -407,7 +407,7 @@ export function RequestForm({
                 setSubCategoryId("");
                 setPartId("");
               }}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("selectCategory")}</option>
               {categories.map((c) => (
@@ -426,7 +426,7 @@ export function RequestForm({
                 setPartId("");
               }}
               disabled={!category}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("selectType")}</option>
               {category?.subCategories.map((s) => (
@@ -442,7 +442,7 @@ export function RequestForm({
               value={partId}
               onChange={(e) => setPartId(e.target.value)}
               disabled={!subCategory}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("selectPart")}</option>
               {subCategory?.parts.map((p) => (
@@ -581,7 +581,7 @@ export function RequestForm({
       {currentStep === "details" && (
         <div className="space-y-5">
           <div className={`${panel} px-5 py-4`}>
-            <p className={overline}>{t("summary")}</p>
+            <p className={`${overline} text-steel-500`}>{t("summary")}</p>
             <p className="mt-1.5 font-heading text-body font-semibold text-steel-900">
               {/* Mirrors what the request will actually say, typed values
                   included, so nothing is a surprise after submitting. */}

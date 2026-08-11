@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getReceivingAccounts, isPlaceholderAccount, methodNeedsSecondField } from "@/lib/payments";
 import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary } from "@/components/ui";
 import { updateReceivingAccountAction } from "./actions";
 
 const methodKeyMap: Record<string, string> = {
@@ -102,7 +103,7 @@ export default async function AdminSettingsPage({
                 )}
               </div>
               <div className="mt-3 flex justify-end">
-                <SubmitButton className="rounded-lg bg-brand-700 px-5 py-2.5 font-heading text-sm font-semibold text-white transition-colors hover:bg-brand-800">
+                <SubmitButton className={btnPrimary}>
                   {t("save")}
                 </SubmitButton>
               </div>

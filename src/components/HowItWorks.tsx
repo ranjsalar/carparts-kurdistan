@@ -30,7 +30,7 @@ function FormPreview() {
   return (
     <PreviewFrame>
       <div className="mb-3 flex items-center gap-1.5">
-        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent-500 text-[8px] font-bold text-white">
+        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent-600 text-[8px] font-bold text-white">
           1
         </span>
         <span className="h-0 flex-1 border-t border-dashed border-steel-300" />

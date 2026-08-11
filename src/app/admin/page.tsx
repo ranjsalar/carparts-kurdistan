@@ -65,9 +65,21 @@ export default async function AdminDashboard() {
   }, 0);
   const pipelineValue = centsToUsd(pipelineCents);
 
-  const stats = [
+  /*
+    Order is reading order, and `primary` is the one tile that gets the filled
+    petrol treatment. Both point at the same stat on purpose: visual weight and
+    position should agree, or the eye lands somewhere the layout did not intend.
+
+    Pending quotes leads because it is the only figure on this row that is work
+    owed — a queue the team can act on right now. Requests today is a volume
+    readout that changes nothing about what happens next, so it reads second.
+
+    The flag is explicit rather than "index 0" so reordering this array can
+    never silently move the anchor onto a different stat.
+  */
+  const stats: { label: string; hint: string | null; value: string; primary?: true }[] = [
+    { label: t("pendingQuotes"), hint: null, value: String(pendingQuotes), primary: true },
     { label: t("requestsToday"), hint: null, value: String(requestsToday) },
-    { label: t("pendingQuotes"), hint: null, value: String(pendingQuotes) },
     { label: t("revenueMonth"), hint: t("revenueMonthHint"), value: `$${revenueMonth}` },
     { label: t("pipelineValue"), hint: t("pipelineValueHint"), value: `$${pipelineValue}` },
     { label: t("customers"), hint: null, value: String(customers) },
@@ -82,25 +94,31 @@ export default async function AdminDashboard() {
       <h1 className="mb-7 text-title font-bold text-steel-900">{t("title")}</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        {stats.map((s, i) => (
+        {stats.map((s) => (
           <div
             key={s.label}
             className={
-              i === 0
+              s.primary
                 ? "rounded-2xl bg-brand-900 p-5 text-white"
                 : "rounded-2xl border border-steel-200 bg-white p-5"
             }
           >
             <p
-              className={`font-heading text-title font-bold ${i === 0 ? "text-white" : "text-steel-900"}`}
+              className={`font-heading text-title font-bold ${s.primary ? "text-white" : "text-steel-900"}`}
               dir="ltr"
             >
               {s.value}
             </p>
-            <p className={`mt-1 text-caption ${i === 0 ? "text-brand-200" : "text-steel-500"}`}>
+            <p className={`mt-1 text-caption ${s.primary ? "text-brand-200" : "text-steel-500"}`}>
               {s.label}
             </p>
-            {s.hint && <p className="mt-0.5 text-overline text-steel-400">{s.hint}</p>}
+            {/* steel-400 is a light-surface neutral and would fail on the
+                filled tile, so the hint follows the tile's treatment too. */}
+            {s.hint && (
+              <p className={`mt-0.5 text-overline ${s.primary ? "text-brand-200" : "text-steel-400"}`}>
+                {s.hint}
+              </p>
+            )}
           </div>
         ))}
       </div>

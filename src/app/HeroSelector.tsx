@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { inputBase, labelBase } from "@/components/ui";
+import { labelBase, selectBase } from "@/components/ui";
 
 export type SelectorBrand = {
   id: string;
@@ -46,7 +46,7 @@ export function HeroSelector({ brands }: { brands: SelectorBrand[] }) {
               setModelId("");
               setYearRangeId("");
             }}
-            className={inputBase}
+            className={selectBase}
           >
             <option value="">{t("requestForm.selectBrand")}</option>
             {brands.map((b) => (
@@ -66,7 +66,7 @@ export function HeroSelector({ brands }: { brands: SelectorBrand[] }) {
                 setYearRangeId("");
               }}
               disabled={!brand}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("requestForm.selectModel")}</option>
               {brand?.models.map((m) => (
@@ -82,7 +82,7 @@ export function HeroSelector({ brands }: { brands: SelectorBrand[] }) {
               value={yearRangeId}
               onChange={(e) => setYearRangeId(e.target.value)}
               disabled={!model}
-              className={inputBase}
+              className={selectBase}
             >
               <option value="">{t("requestForm.selectYears")}</option>
               {model?.yearRanges.map((y) => (

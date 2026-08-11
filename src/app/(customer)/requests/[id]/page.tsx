@@ -166,7 +166,7 @@ export default async function CustomerRequestDetailPage({
         <p className="text-body text-steel-700">
           {vehicleLabel(request)}
           {request.colorCode && (
-            <span className="ms-2 rounded-md bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
+            <span className="ms-2 rounded-full bg-steel-100 px-2.5 py-0.5 font-heading text-overline font-semibold uppercase text-steel-600">
               {request.colorCode}
             </span>
           )}
@@ -266,7 +266,9 @@ export default async function CustomerRequestDetailPage({
 
       {canPay && (
         <section className={`${card} mb-5 p-5`}>
-          <h2 className={overline}>{inPipeline ? tp("settleTitle") : t("paymentTitle")}</h2>
+          <h2 className={`${overline} text-steel-500`}>
+            {inPipeline ? tp("settleTitle") : t("paymentTitle")}
+          </h2>
 
           {/* Balance summary — total / paid / remaining */}
           <div className="mt-3 grid grid-cols-3 gap-3 rounded-xl bg-steel-100/70 p-3 text-center">
@@ -347,7 +349,7 @@ export default async function CustomerRequestDetailPage({
       {/* Shipment tracking — stage icons on a route */}
       {(request.status === "PAID" || SHIPMENT_STAGES.includes(request.status)) && (
         <section className={`${card} mb-5 p-6`}>
-          <h2 className={`${overline} mb-5`}>{tt("title")}</h2>
+          <h2 className={`${overline} mb-5 text-steel-500`}>{tt("title")}</h2>
           <ol>
             {SHIPMENT_STAGES.map((stage, i) => {
               const currentIdx = SHIPMENT_STAGES.indexOf(request.status);
@@ -410,7 +412,7 @@ export default async function CustomerRequestDetailPage({
 
       {/* Timeline */}
       <section className={`${card} p-6`}>
-        <h2 className={`${overline} mb-4`}>{t("progress")}</h2>
+        <h2 className={`${overline} mb-4 text-steel-500`}>{t("progress")}</h2>
         <ol className="space-y-4">
           {request.statusLogs.map((log) => (
             <li key={log.id} className="flex gap-3 text-caption">

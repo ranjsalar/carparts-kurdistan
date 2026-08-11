@@ -114,7 +114,7 @@ export default async function AdminPaymentsPage({
             id="sort"
             name="sort"
             defaultValue={sortKey}
-            className="rounded-lg border border-steel-300 bg-white px-3.5 py-2.5 text-body text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
+            className="select-field rounded-lg border border-steel-300 bg-white px-3.5 py-2.5 text-body text-steel-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
           >
             {SORT_KEYS.map((k) => (
               <option key={k} value={k}>
