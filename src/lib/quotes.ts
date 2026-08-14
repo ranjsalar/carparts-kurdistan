@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { partLabel } from "./request-display";
+import { notifiableUserId } from "./request-customer";
 import { TIMELINE } from "./timeline";
 import type { SourceCountry } from "@/generated/prisma/enums";
 
@@ -76,6 +77,10 @@ export async function sendQuote(
   const sourceLabel = input.source === "CHINA" ? "China" : "Dubai";
   const quoteNotes = input.quoteNotes?.trim() || null;
 
+  // A walk-in order has no account, so there is no inbox to write to — the
+  // quote is handed over at the counter. Everything else is identical.
+  const notifyId = notifiableUserId(request);
+
   await prisma.$transaction([
     prisma.partRequest.update({
       where: { id: requestId },
@@ -102,9 +107,9 @@ export async function sendQuote(
         createdById: adminId,
       },
     }),
-    prisma.notification.create({
+    ...(notifyId ? [prisma.notification.create({
       data: {
-        userId: request.customerId,
+        userId: notifyId,
         requestId,
         type: "QUOTE_SENT",
         templateKey: isUpdate ? "quoteUpdated" : "quoteSent",
@@ -117,7 +122,7 @@ export async function sendQuote(
         title: isUpdate ? "Your quote was updated" : "Your quote is ready",
         body: `${partLabel(request)} for your ${request.brand?.name ?? request.rawBrandText ?? ""} ${request.carModel?.name ?? request.rawModelText ?? ""}: $${total}. Open “My requests” to review and approve.`,
       },
-    }),
+    })] : []),
   ]);
 
   // TODO: also send this notification to the customer over WhatsApp

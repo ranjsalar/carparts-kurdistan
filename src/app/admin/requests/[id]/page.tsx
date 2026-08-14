@@ -15,6 +15,8 @@ import {
   partLabel,
   vehicleLabel,
 } from "@/lib/request-display";
+import { isWalkIn, partyEmail, partyName, partyPhone } from "@/lib/request-customer";
+import { ChannelBadge } from "@/components/ChannelBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
@@ -211,16 +213,29 @@ export default async function RequestDetailPage({
           </section>
 
           <section className="rounded-2xl border border-steel-200 bg-white p-5">
-            <h2 className="mb-3 font-heading text-overline font-semibold uppercase text-steel-500">{t("customer")}</h2>
-            <p className="font-medium text-steel-900">{request.customer.name}</p>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className="font-heading text-overline font-semibold uppercase text-steel-500">
+                {t("customer")}
+              </h2>
+              <ChannelBadge request={request} />
+            </div>
+            <p className="font-medium text-steel-900">{partyName(request)}</p>
             <p className="mt-1 text-sm text-steel-600">
-              {request.customer.phone && (
+              {partyPhone(request) && (
                 <span className="me-4" dir="ltr">
-                  📱 {request.customer.phone}
+                  📱 {partyPhone(request)}
                 </span>
               )}
-              {request.customer.email && <span dir="ltr">✉️ {request.customer.email}</span>}
+              {partyEmail(request) && <span dir="ltr">✉️ {partyEmail(request)}</span>}
             </p>
+            {/* A walk-in has no account, so nothing the pipeline writes reaches
+                them automatically — say so where the contact details are, not
+                buried elsewhere. */}
+            {isWalkIn(request) && (
+              <p className="mt-2 rounded-lg bg-accent-50 px-3 py-2 text-caption text-accent-800">
+                {t("walkInNoAccount")}
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-steel-200 bg-white p-5">

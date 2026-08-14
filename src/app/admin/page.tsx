@@ -6,11 +6,13 @@ import { SHIPMENT_STAGES } from "@/lib/shipments";
 import { formatUsd } from "@/lib/format";
 import { centsToUsd, computePaymentState } from "@/lib/payments";
 import { LOGIN_NOTE_LABEL } from "@/lib/admin-activity";
+import { getChannelBreakdown } from "@/lib/walk-in";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
 export default async function AdminDashboard() {
   const t = await getTranslations("admin.dashboard");
   const ts = await getTranslations("statuses");
+  const tch = await getTranslations("admin.channel");
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -25,6 +27,7 @@ export default async function AdminDashboard() {
     parts,
     byStatus,
     recentLogins,
+    channels,
   ] = await Promise.all([
     prisma.partRequest.count({ where: { createdAt: { gte: startOfToday } } }),
     prisma.partRequest.count({ where: { status: "PENDING" } }),
@@ -48,6 +51,7 @@ export default async function AdminDashboard() {
     prisma.part.count(),
     prisma.partRequest.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.adminLoginLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    getChannelBreakdown(),
   ]);
 
   const stageCounts = new Map(byStatus.map((g) => [g.status, g._count._all]));
@@ -120,6 +124,39 @@ export default async function AdminDashboard() {
               </p>
             )}
           </div>
+        ))}
+      </div>
+
+      {/* Where the orders come from. Two tiles rather than one combined
+          figure: the useful question is not "how many orders" but "how much of
+          the business walks through the door", and that only reads as a
+          comparison. Each links into the queue already filtered. */}
+      <h2 className="mt-10 mb-4 font-heading text-overline font-semibold uppercase text-steel-500">
+        {t("byChannel")}
+      </h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {[
+          { key: "WEB", label: tch("web"), data: channels.web },
+          { key: "WALK_IN", label: tch("walkIn"), data: channels.walkIn },
+        ].map((c) => (
+          <Link
+            key={c.key}
+            href={`/admin/requests?channel=${c.key}`}
+            className="flex items-center justify-between gap-4 rounded-2xl border border-steel-200 bg-white p-5 transition-colors hover:border-brand-400"
+          >
+            <div>
+              <p className="font-heading text-title font-bold text-steel-900" dir="ltr">
+                {c.data.count}
+              </p>
+              <p className="mt-1 text-caption text-steel-500">{c.label}</p>
+            </div>
+            <div className="text-end">
+              <p className="font-heading text-heading font-bold text-steel-900" dir="ltr">
+                ${c.data.value}
+              </p>
+              <p className="mt-0.5 text-overline text-steel-400">{t("channelValue")}</p>
+            </div>
+          </Link>
         ))}
       </div>
 

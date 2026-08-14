@@ -40,6 +40,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/requests" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
                 {t("nav.requests")}
               </Link>
+              <Link href="/admin/walk-in" className="flex min-h-11 items-center rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white">
+                {t("walkIn.navTitle")}
+              </Link>
               <Link
                 href="/admin/payments"
                 className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 transition-colors hover:bg-white/10 hover:text-white"

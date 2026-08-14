@@ -22,7 +22,7 @@ export type TaxonomyBrand = {
   this can never collide with one. Choosing it swaps the dropdown for a text
   box and clears the levels below, which no longer have a catalog to draw on.
 */
-const OTHER = "__other__";
+export const OTHER = "__other__";
 
 export type TaxonomyCategory = {
   id: string;

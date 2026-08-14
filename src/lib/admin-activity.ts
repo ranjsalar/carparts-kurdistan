@@ -21,6 +21,7 @@ export const ADMIN_ACTION = {
   customerRestored: "CUSTOMER_RESTORED",
   customerDeleted: "CUSTOMER_DELETED",
   taxonomyImported: "TAXONOMY_IMPORTED",
+  walkInOrderCreated: "WALK_IN_ORDER_CREATED",
 } as const;
 
 export type AdminAction = (typeof ADMIN_ACTION)[keyof typeof ADMIN_ACTION];
@@ -43,6 +44,7 @@ export const ADMIN_ACTION_LABEL: Record<string, string> = {
   CUSTOMER_RESTORED: "Customer restored",
   CUSTOMER_DELETED: "Customer deleted",
   TAXONOMY_IMPORTED: "Taxonomy imported",
+  WALK_IN_ORDER_CREATED: "Walk-in order created",
 };
 
 /** Sign-in audit notes, English for the same reason as the labels above. */

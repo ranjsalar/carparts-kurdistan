@@ -11,6 +11,9 @@ const actionStyle: Record<string, string> = {
   CUSTOMER_SUSPENDED: "bg-danger-50 text-danger-700 ring-1 ring-danger-100",
   PAYMENT_REJECTED: "bg-danger-50 text-danger-700 ring-1 ring-danger-100",
   PAYMENT_CONFIRMED: "bg-success-50 text-success-700 ring-1 ring-success-100",
+  // Amber, matching the walk-in channel badge, so counter orders read the same
+  // wherever they appear.
+  WALK_IN_ORDER_CREATED: "bg-accent-50 text-accent-700 ring-1 ring-accent-200",
 };
 
 export default async function AdminActivityPage() {
