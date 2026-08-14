@@ -134,7 +134,11 @@
     "yearRequired": "Please choose or type the year.",
     "partRequired": "Please choose a part or describe the one you need.",
     "conditionRequired": "Please choose the condition you want for this part.",
-    "conditionNotApplicable": "Condition doesn't apply to this part."
+    "conditionNotApplicable": "Condition doesn't apply to this part.",
+    "walkInNameRequired": "Enter the customer's name.",
+    "walkInPhoneRequired": "Enter the customer's phone number.",
+    "invalidPaymentPlan": "Choose how much is being paid.",
+    "invalidPaymentMethod": "Choose a payment method."
   },
   "auth": {
     "login": {
@@ -434,6 +438,10 @@
     "paymentSubmitted": {
       "title": "Payment submitted",
       "body": "Our team will verify it and confirm shortly. You'll get a notification once it's confirmed."
+    },
+    "walkInCreated": {
+      "title": "Walk-in order created",
+      "body": "The order is in the queue with its price and any payment already recorded."
     }
   },
   "statuses": {
@@ -583,7 +591,9 @@
       "recentLogins": "Recent admin logins",
       "noLogins": "No login attempts recorded yet.",
       "queueLink": "Open the requests queue",
-      "queueHint": "to review and quote incoming part requests."
+      "queueHint": "to review and quote incoming part requests.",
+      "byChannel": "By channel",
+      "channelValue": "Quoted value"
     },
     "queue": {
       "title": "Requests queue",
@@ -599,7 +609,13 @@
       "empty": "No requests.",
       "emptyHint": "New customer requests will land here as soon as they come in.",
       "lowConversion": "Low conversion",
-      "lowConversionHint": "Several requests, no approvals yet — likely checking prices."
+      "lowConversionHint": "Several requests, no approvals yet — likely checking prices.",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Name, phone or email",
+      "channelLabel": "Channel",
+      "channelAll": "All channels",
+      "applyFilters": "Apply",
+      "clearFilters": "Clear"
     },
     "taxonomy": {
       "vehiclesTitle": "Vehicle taxonomy",
@@ -690,7 +706,8 @@
         "year": "Year",
         "trim": "Trim",
         "part": "Part"
-      }
+      },
+      "walkInNoAccount": "Walk-in customer — no account, so status updates aren't sent automatically. Contact them by phone."
     },
     "customers": {
       "navTitle": "Customers",
@@ -774,6 +791,50 @@
     },
     "security": {
       "alert": "{count} security alert(s) need review — open now"
+    },
+    "channel": {
+      "web": "Website",
+      "walkIn": "Walk-in"
+    },
+    "walkIn": {
+      "navTitle": "Walk-in",
+      "title": "New walk-in order",
+      "subtitle": "For a customer at the office. No account is created — the order goes straight into the same pipeline as a website request.",
+      "customerTitle": "Customer",
+      "customerHint": "Enough to call them back when the part arrives. No account or login is created.",
+      "name": "Full name",
+      "phone": "Phone number",
+      "email": "Email",
+      "vehicleTitle": "Vehicle",
+      "partTitle": "Part",
+      "priceTitle": "Price",
+      "priceHint": "The price agreed at the counter. The order is created already quoted — there is no separate quote step.",
+      "pricePart": "Part",
+      "priceShipping": "Shipping",
+      "priceTax": "Tax / customs",
+      "priceDelivery": "Local delivery",
+      "paymentTitle": "Payment",
+      "paymentHint": "If the customer is paying now, record it here — it is confirmed immediately, with no separate confirmation step.",
+      "planNone": "Not paying yet",
+      "planNoneDesc": "Record the order now, take payment later.",
+      "planHalfDesc": "Half now, the rest before delivery.",
+      "planFullDesc": "The whole amount, taken now.",
+      "selectMethod": "Select a method",
+      "methodHint": "Cash on delivery cannot be the first payment — the balance can be settled that way later.",
+      "notes": "Notes",
+      "notesPlaceholder": "Anything the sourcing team needs to know…",
+      "summaryTitle": "Order summary",
+      "summaryTotal": "Total",
+      "summaryCustomer": "Customer",
+      "summaryVehicle": "Vehicle",
+      "summaryPart": "Part",
+      "summaryPaidNow": "Paid now",
+      "summaryRemaining": "Remaining",
+      "outcomeApproved": "Will be created as approved, awaiting payment.",
+      "outcomeSourcing": "Will be created as sourcing — payment recorded and confirmed.",
+      "create": "Create order",
+      "creating": "Creating…",
+      "sourceTitle": "Where it will be sourced from"
     }
   },
   "marketing": {

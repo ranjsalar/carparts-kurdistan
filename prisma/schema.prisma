@@ -184,6 +184,13 @@ enum SourceCountry {
   DUBAI
 }
 
+// Where an order came from. Fulfillment is identical either way — this only
+// records origin, so the team can tell counter trade from web trade.
+enum RequestChannel {
+  WEB
+  WALK_IN
+}
+
 // Condition/grade of a body panel. Only asked for parts with conditionApplies
 // set — this distinction is meaningful for a bonnet or a door and meaningless
 // for an oil filter.
@@ -219,9 +226,37 @@ enum PaymentStatus {
 }
 
 model PartRequest {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   User     @relation("CustomerRequests", fields: [customerId], references: [id])
+  id String @id @default(cuid())
+
+  /*
+    How the order arrived. Walk-in orders are taken at the counter by an admin
+    for someone standing in the office; web orders come from a registered
+    customer through the site.
+
+    This is deliberately a field on the same table rather than a separate
+    model: once created, the two are fulfilled identically (sourcing →
+    shipped → arrived → ready → completed), so splitting them would mean
+    duplicating the entire pipeline to gain nothing.
+  */
+  channel RequestChannel @default(WEB)
+
+  /*
+    Web orders belong to a User. Walk-in orders do not — the person never
+    registers, so there is no account, no password and nothing to log into.
+    Their details live on the request as an internal record instead. Exactly
+    one of (customerId) / (walkInName + walkInPhone) is set; enforced in the
+    creation paths, since Postgres cannot express "either this or that".
+
+    onDelete stays Restrict, as it was while this column was required. Prisma
+    defaults a newly-optional relation to SetNull, which would silently blank
+    the customer out of historical orders the first time someone was deleted.
+  */
+  customerId String?
+  customer   User?   @relation("CustomerRequests", fields: [customerId], references: [id], onDelete: Restrict)
+
+  walkInName  String?
+  walkInPhone String?
+  walkInEmail String?
 
   // Catalog selections. All optional because a customer can pick
   // "Other — not listed" at any level and type what they actually have; the

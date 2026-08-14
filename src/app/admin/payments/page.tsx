@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { computePaymentState } from "@/lib/payments";
 import { formatUsd } from "@/lib/format";
 import { partLabel, vehicleLabel } from "@/lib/request-display";
+import { partyName } from "@/lib/request-customer";
+import { ChannelBadge } from "@/components/ChannelBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import { InlineConfirm } from "@/components/InlineConfirm";
@@ -55,12 +57,12 @@ export default async function AdminPaymentsPage({
     ...(query
       ? {
           request: {
-            customer: {
-              OR: [
-                { name: { contains: query, mode: "insensitive" as const } },
-                { phone: { contains: query } },
-              ],
-            },
+            OR: [
+              { customer: { name: { contains: query, mode: "insensitive" as const } } },
+              { customer: { phone: { contains: query } } },
+              { walkInName: { contains: query, mode: "insensitive" as const } },
+              { walkInPhone: { contains: query } },
+            ],
           },
         }
       : {}),
@@ -175,7 +177,10 @@ export default async function AdminPaymentsPage({
                   </div>
                   <div className="flex justify-between gap-3 border-b border-steel-100 pb-2">
                     <dt className="text-steel-500">{t("customer")}</dt>
-                    <dd className="text-end font-medium text-steel-900">{p.request.customer.name}</dd>
+                    <dd className="flex items-center justify-end gap-2 text-end font-medium text-steel-900">
+                      {partyName(p.request)}
+                      <ChannelBadge request={p.request} />
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-3 border-b border-steel-100 pb-2">
                     <dt className="text-steel-500">{t("sender")}</dt>

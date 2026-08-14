@@ -5,26 +5,57 @@ import { statusBadgeClasses, statusLabels } from "@/lib/status";
 import { formatUsd } from "@/lib/format";
 import { computePaymentState } from "@/lib/payments";
 import { partLabel, vehicleLabel } from "@/lib/request-display";
+import { partyName, partyPhone } from "@/lib/request-customer";
+import { ChannelBadge } from "@/components/ChannelBadge";
 import { IconRequest } from "@/components/icons";
+import { btnPrimary, inputBase, labelBase, selectBase } from "@/components/ui";
 import type { RequestStatus } from "@/generated/prisma/enums";
+import type { Prisma } from "@/generated/prisma/client";
 
 const ALL_STATUSES = Object.keys(statusLabels) as RequestStatus[];
 
 export default async function RequestsQueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; channel?: string }>;
 }) {
   const t = await getTranslations("admin.queue");
   const ts = await getTranslations("statuses");
-  const { status } = await searchParams;
+  const tch = await getTranslations("admin.channel");
+  const { status, q, channel } = await searchParams;
   const activeStatus = ALL_STATUSES.includes(status as RequestStatus)
     ? (status as RequestStatus)
     : null;
+  const query = (q ?? "").trim();
+  const activeChannel = channel === "WEB" || channel === "WALK_IN" ? channel : null;
+
+  /*
+    Search has to reach both kinds of customer. A web order's name and phone
+    live on the related User; a walk-in order's live on the request itself, so
+    the same query string is matched against both sets of columns.
+  */
+  const searchWhere: Prisma.PartRequestWhereInput = query
+    ? {
+        OR: [
+          { customer: { name: { contains: query, mode: "insensitive" as const } } },
+          { customer: { phone: { contains: query } } },
+          { customer: { email: { contains: query, mode: "insensitive" as const } } },
+          { walkInName: { contains: query, mode: "insensitive" as const } },
+          { walkInPhone: { contains: query } },
+          { walkInEmail: { contains: query, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const where: Prisma.PartRequestWhereInput = {
+    ...(activeStatus ? { status: activeStatus } : {}),
+    ...(activeChannel ? { channel: activeChannel } : {}),
+    ...searchWhere,
+  };
 
   const [requests, grouped, perCustomer, converted] = await Promise.all([
     prisma.partRequest.findMany({
-      where: activeStatus ? { status: activeStatus } : {},
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         customer: true,
@@ -37,11 +68,19 @@ export default async function RequestsQueuePage({
       },
     }),
     prisma.partRequest.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.partRequest.groupBy({ by: ["customerId"], _count: { _all: true } }),
+    // Both groupBys exclude walk-ins: they share a null customerId, so they
+    // would collapse into a single bucket and every counter order would be
+    // badged "low conversion" once three of them existed.
+    prisma.partRequest.groupBy({
+      by: ["customerId"],
+      _count: { _all: true },
+      where: { customerId: { not: null } },
+    }),
     prisma.partRequest.groupBy({
       by: ["customerId"],
       _count: { _all: true },
       where: {
+        customerId: { not: null },
         status: {
           in: ["APPROVED", "PAID", "SOURCING", "SHIPPED", "ARRIVED", "READY", "COMPLETED"],
         },
@@ -64,6 +103,44 @@ export default async function RequestsQueuePage({
   return (
     <div>
       <h1 className="mb-6 text-title font-bold text-steel-900">{t("title")}</h1>
+
+      {/* Plain GET form so a filtered queue is a shareable, bookmarkable URL —
+          same approach as the payments queue. Status stays in the URL while
+          searching so the two filters compose. */}
+      <form method="get" className="mb-5 flex flex-wrap items-end gap-3">
+        {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
+        <div className="min-w-48 flex-1">
+          <label htmlFor="q" className={labelBase}>
+            {t("searchLabel")}
+          </label>
+          <input
+            id="q"
+            name="q"
+            defaultValue={query}
+            placeholder={t("searchPlaceholder")}
+            className={inputBase}
+          />
+        </div>
+        <div>
+          <label htmlFor="channel" className={labelBase}>
+            {t("channelLabel")}
+          </label>
+          <select id="channel" name="channel" defaultValue={activeChannel ?? ""} className={selectBase}>
+            <option value="">{t("channelAll")}</option>
+            <option value="WEB">{tch("web")}</option>
+            <option value="WALK_IN">{tch("walkIn")}</option>
+          </select>
+        </div>
+        <button className={btnPrimary}>{t("applyFilters")}</button>
+        {(query || activeChannel) && (
+          <Link
+            href={activeStatus ? `/admin/requests?status=${activeStatus}` : "/admin/requests"}
+            className="flex min-h-11 items-center text-caption font-semibold text-brand-700 hover:underline"
+          >
+            {t("clearFilters")}
+          </Link>
+        )}
+      </form>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Link
@@ -112,11 +189,12 @@ export default async function RequestsQueuePage({
                 <li key={r.id} className="rounded-2xl border border-steel-200 bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-semibold text-steel-900">
-                        {r.customer.name}
-                        {lowConversionIds.has(r.customerId) && (
+                      <p className="flex flex-wrap items-center gap-2 font-semibold text-steel-900">
+                        {partyName(r)}
+                        <ChannelBadge request={r} />
+                        {r.customerId !== null && lowConversionIds.has(r.customerId) && (
                           <span
-                            className="ms-2 rounded-full bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-500 ring-1 ring-steel-300"
+                            className="rounded-full bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-500 ring-1 ring-steel-300"
                             title={t("lowConversionHint")}
                           >
                             {t("lowConversion")}
@@ -124,7 +202,7 @@ export default async function RequestsQueuePage({
                         )}
                       </p>
                       <p className="text-overline text-steel-500" dir="ltr">
-                        {r.customer.phone ?? r.customer.email}
+                        {partyPhone(r) ?? r.customer?.email ?? r.walkInEmail ?? ""}
                       </p>
                     </div>
                     <span
@@ -202,11 +280,12 @@ export default async function RequestsQueuePage({
                     })}
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="font-semibold text-steel-900">
-                      {r.customer.name}
-                      {lowConversionIds.has(r.customerId) && (
+                    <p className="flex flex-wrap items-center gap-2 font-semibold text-steel-900">
+                      {partyName(r)}
+                      <ChannelBadge request={r} />
+                      {r.customerId !== null && lowConversionIds.has(r.customerId) && (
                         <span
-                          className="ms-2 rounded-full bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-500 ring-1 ring-steel-300"
+                          className="rounded-full bg-steel-100 px-2 py-0.5 font-heading text-overline font-semibold uppercase text-steel-500 ring-1 ring-steel-300"
                           title={t("lowConversionHint")}
                         >
                           {t("lowConversion")}
@@ -214,7 +293,7 @@ export default async function RequestsQueuePage({
                       )}
                     </p>
                     <p className="text-overline text-steel-400" dir="ltr">
-                      {r.customer.phone ?? r.customer.email}
+                      {partyPhone(r) ?? r.customer?.email ?? r.walkInEmail ?? ""}
                     </p>
                   </td>
                   <td className="px-4 py-3.5 text-steel-700">

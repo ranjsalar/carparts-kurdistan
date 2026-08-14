@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { partLabel } from "./request-display";
+import { notifiableUserId } from "./request-customer";
 import { TIMELINE } from "./timeline";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
@@ -20,7 +21,7 @@ const PAYABLE_STATUSES = ["APPROVED", "PAID", "SOURCING", "SHIPPED", "ARRIVED", 
 
 // All money math is done in integer cents to avoid floating-point drift, then
 // formatted to a 2-dp string for storage in the Decimal column.
-function toCents(v: Prisma.Decimal | number | string | null | undefined): number {
+export function toCents(v: Prisma.Decimal | number | string | null | undefined): number {
   if (v === null || v === undefined) return 0;
   return Math.round(Number(v) * 100);
 }
@@ -273,6 +274,10 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
   const amountStr = centsToUsd(paymentCents);
   const remainingStr = centsToUsd(remainingAfter);
 
+  // Walk-in orders have no account, so there is no inbox to write to; the
+  // rest of the flow is identical.
+  const notifyId = notifiableUserId(request);
+
   try {
     await prisma.$transaction(async (tx) => {
       const fresh = await tx.payment.findUnique({ where: { id: paymentId } });
@@ -301,9 +306,9 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               createdById: adminId,
             },
           });
-          await tx.notification.create({
+          if (notifyId) await tx.notification.create({
             data: {
-              userId: request.customerId,
+              userId: notifyId,
               requestId: request.id,
               type: "PAYMENT_CONFIRMED",
               templateKey: "paymentConfirmed",
@@ -327,9 +332,9 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
               createdById: adminId,
             },
           });
-          await tx.notification.create({
+          if (notifyId) await tx.notification.create({
             data: {
-              userId: request.customerId,
+              userId: notifyId,
               requestId: request.id,
               type: "PAYMENT_CONFIRMED",
               templateKey: "paymentSourcingStarted",
@@ -362,9 +367,9 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             createdById: adminId,
           },
         });
-        await tx.notification.create({
+        if (notifyId) await tx.notification.create({
           data: {
-            userId: request.customerId,
+            userId: notifyId,
             requestId: request.id,
             type: "PAYMENT_CONFIRMED",
             templateKey: "paymentSettled",
@@ -391,9 +396,9 @@ export async function confirmPayment(adminId: string, paymentId: string): Promis
             createdById: adminId,
           },
         });
-        await tx.notification.create({
+        if (notifyId) await tx.notification.create({
           data: {
-            userId: request.customerId,
+            userId: notifyId,
             requestId: request.id,
             type: "PAYMENT_CONFIRMED",
             templateKey: "paymentConfirmedPartial",
@@ -435,6 +440,10 @@ export async function rejectPayment(
   const request = payment.request;
   const amountStr = centsToUsd(toCents(payment.amountUsd));
 
+  // Walk-in orders have no account, so there is no inbox to write to; the
+  // rest of the flow is identical.
+  const notifyId = notifiableUserId(request);
+
   try {
     await prisma.$transaction(async (tx) => {
       const fresh = await tx.payment.findUnique({ where: { id: paymentId } });
@@ -459,9 +468,9 @@ export async function rejectPayment(
           createdById: adminId,
         },
       });
-      await tx.notification.create({
+      if (notifyId) await tx.notification.create({
         data: {
-          userId: request.customerId,
+          userId: notifyId,
           requestId: request.id,
           type: "PAYMENT_REJECTED",
           templateKey: "paymentRejected",

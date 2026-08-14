@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { partLabel } from "./request-display";
+import { notifiableUserId } from "./request-customer";
 import { computePaymentState } from "./payments";
 import type { RequestStatus } from "@/generated/prisma/enums";
 
@@ -88,6 +89,10 @@ export async function advanceShipment(
   }
 
   const copy = notificationCopy[next]!;
+  // Walk-in orders advance through exactly the same pipeline, but there is no
+  // account to notify — the customer is called or comes back to the counter.
+  const notifyId = notifiableUserId(request);
+
   await prisma.$transaction([
     prisma.partRequest.update({ where: { id: requestId }, data: { status: next } }),
     prisma.statusLog.create({
@@ -98,9 +103,9 @@ export async function advanceShipment(
         createdById: adminId,
       },
     }),
-    prisma.notification.create({
+    ...(notifyId ? [prisma.notification.create({
       data: {
-        userId: request.customerId,
+        userId: notifyId,
         requestId,
         type: "STATUS_UPDATE",
         templateKey: copy.templateKey,
@@ -108,7 +113,7 @@ export async function advanceShipment(
         title: copy.title,
         body: copy.body(partLabel(request)) + (note?.trim() ? ` Note: ${note.trim()}` : ""),
       },
-    }),
+    })] : []),
   ]);
 
   // TODO: send this status update over WhatsApp too (same pattern as
